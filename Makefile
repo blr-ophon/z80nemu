@@ -34,7 +34,7 @@ clean:
 testleak: ${EXEC}
 	valgrind --leak-check=full --show-leak-kinds=all ./$^ ./tests/TST8080.COM
 
-testrom-all: test1 test2 test3
+testrom-all: testrom1 testrom2 testrom3
 
 testrom1: ${EXEC} 
 	./$< ./tests/TST8080.COM 
