@@ -317,14 +317,12 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x34: //INC M 
             cpu->flags.n = 0;
             test_flag_ac(&cpu->flags, PTR(HL), 0x01, 0);
-            cpu->memory->memory[read_reg_HL(cpu)]++;
             PTR(HL)++;
             test_normal_flags(&cpu->flags, PTR(HL));
             break;
         case 0x35: //DEC M
             cpu->flags.n = 1;
             test_flag_ac(&cpu->flags, PTR(HL), 0xff, 0);
-            cpu->memory->memory[read_reg_HL(cpu)]--;
             PTR(HL)--;
             test_normal_flags(&cpu->flags, PTR(HL));
             break;

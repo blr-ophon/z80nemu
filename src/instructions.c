@@ -138,7 +138,7 @@ void instruction_rl(struct cpu8080 *cpu, uint8_t *reg_x){
         cpu->flags.cy = 0;
     }
     cpu->flags.n = 0;
-    cpu->flags.ac = 0;
+//    cpu->flags.ac = 0;
 }
 
 void instruction_rr(struct cpu8080 *cpu, uint8_t *reg_x){
@@ -156,7 +156,7 @@ void instruction_rr(struct cpu8080 *cpu, uint8_t *reg_x){
         cpu->flags.cy = 0;
     }
     cpu->flags.n = 0;
-    cpu->flags.ac = 0;
+//    cpu->flags.ac = 0;
 }
 
 void instruction_rlc(struct cpu8080 *cpu, uint8_t *reg_x){
@@ -170,7 +170,7 @@ void instruction_rlc(struct cpu8080 *cpu, uint8_t *reg_x){
         *reg_x &= ~0b00000001;
     }
     cpu->flags.n = 0;
-    cpu->flags.ac = 0;
+//    cpu->flags.ac = 0;
 }
 
 void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x){
@@ -184,7 +184,7 @@ void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x){
         *reg_x &= ~0b10000000;
     }
     cpu->flags.n = 0;
-    cpu->flags.ac = 0;
+//    cpu->flags.ac = 0;
 }
 
 void instruction_add(struct cpu8080 *cpu, uint8_t reg_x){
