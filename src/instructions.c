@@ -5,8 +5,8 @@
 void instruction_inc_8(struct cpu8080 *cpu, uint8_t *reg_x, int8_t addend){
     assert(addend == 1 || addend == -1);
     cpu->flags.n = addend == 1? 0 : 1;
-    flags_test_H(&cpu->flags, *reg_x, addend, 0);
     flags_test_V(&cpu->flags, *reg_x, addend);
+    flags_test_H(&cpu->flags, *reg_x, addend, 0);
     (*reg_x) += addend;
     flags_test_ZS(&cpu->flags, *reg_x);
 }

@@ -761,7 +761,6 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-
         case 0xcb: //PREFIX: BIT INSTRUCTIONS
             {
             uint8_t opcode = memory_read8(cpu->memory, ++cpu->PC);
@@ -1116,130 +1115,162 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
         case 0x00: //RLC B
             instruction_rlc(cpu, &cpu->reg_B);
             flags_test_ZS(&cpu->flags, cpu->reg_B);
+            flags_test_P(&cpu->flags, cpu->reg_B);
             break;
         case 0x01: //RLC C
             instruction_rlc(cpu, &cpu->reg_C);
             flags_test_ZS(&cpu->flags, cpu->reg_C);
+            flags_test_P(&cpu->flags, cpu->reg_C);
             break;
         case 0x02: //RLC D
             instruction_rlc(cpu, &cpu->reg_D);
             flags_test_ZS(&cpu->flags, cpu->reg_D);
+            flags_test_P(&cpu->flags, cpu->reg_D);
             break;
         case 0x03: //RLC E
             instruction_rlc(cpu, &cpu->reg_E);
             flags_test_ZS(&cpu->flags, cpu->reg_E);
+            flags_test_P(&cpu->flags, cpu->reg_E);
             break;
         case 0x04: //RLC H
             instruction_rlc(cpu, &cpu->reg_H);
             flags_test_ZS(&cpu->flags, cpu->reg_H);
+            flags_test_P(&cpu->flags, cpu->reg_H);
             break;
         case 0x05: //RLC L
             instruction_rlc(cpu, &cpu->reg_L);
             flags_test_ZS(&cpu->flags, cpu->reg_L);
+            flags_test_P(&cpu->flags, cpu->reg_L);
             break;
         case 0x06: //RLC (HL)
             instruction_rlc(cpu, &PTR(HL));
             flags_test_ZS(&cpu->flags, PTR(HL));
+            flags_test_P(&cpu->flags, PTR(HL));
             break;
         case 0x07: //RLC A
             instruction_rlc(cpu, &cpu->reg_A);
             flags_test_ZS(&cpu->flags, cpu->reg_A);
+            flags_test_P(&cpu->flags, cpu->reg_A);
             break;
         case 0x08: //RRC B
             instruction_rrc(cpu, &cpu->reg_B);
             flags_test_ZS(&cpu->flags, cpu->reg_B);
+            flags_test_P(&cpu->flags, cpu->reg_B);
             break;
         case 0x09: //RRC C
             instruction_rrc(cpu, &cpu->reg_C);
             flags_test_ZS(&cpu->flags, cpu->reg_C);
+            flags_test_P(&cpu->flags, cpu->reg_C);
             break;
         case 0x0a: //RRC D
             instruction_rrc(cpu, &cpu->reg_D);
             flags_test_ZS(&cpu->flags, cpu->reg_D);
+            flags_test_P(&cpu->flags, cpu->reg_D);
             break;
         case 0x0b: //RRC E
             instruction_rrc(cpu, &cpu->reg_E);
             flags_test_ZS(&cpu->flags, cpu->reg_E);
+            flags_test_P(&cpu->flags, cpu->reg_E);
             break;
         case 0x0c: //RRC H
             instruction_rrc(cpu, &cpu->reg_H);
             flags_test_ZS(&cpu->flags, cpu->reg_H);
+            flags_test_P(&cpu->flags, cpu->reg_H);
             break;
         case 0x0d: //RRC L
             instruction_rrc(cpu, &cpu->reg_L);
             flags_test_ZS(&cpu->flags, cpu->reg_L);
+            flags_test_P(&cpu->flags, cpu->reg_L);
             break;
         case 0x0e: //RRC (HL)
             instruction_rrc(cpu, &PTR(HL));
             flags_test_ZS(&cpu->flags, PTR(HL));
+            flags_test_P(&cpu->flags, PTR(HL));
             break;
         case 0x0f: //RRC A
             instruction_rrc(cpu, &cpu->reg_A);
             flags_test_ZS(&cpu->flags, cpu->reg_A);
+            flags_test_P(&cpu->flags, cpu->reg_A);
             break;
         case 0x10: //RL B
             instruction_rl(cpu, &cpu->reg_B);
             flags_test_ZS(&cpu->flags, cpu->reg_B);
+            flags_test_P(&cpu->flags, cpu->reg_B);
             break;
         case 0x11: //RL C
             instruction_rl(cpu, &cpu->reg_C);
             flags_test_ZS(&cpu->flags, cpu->reg_C);
+            flags_test_P(&cpu->flags, cpu->reg_C);
             break;
         case 0x12: //RL D
             instruction_rl(cpu, &cpu->reg_D);
             flags_test_ZS(&cpu->flags, cpu->reg_D);
+            flags_test_P(&cpu->flags, cpu->reg_D);
             break;
         case 0x13: //RL E
             instruction_rl(cpu, &cpu->reg_E);
             flags_test_ZS(&cpu->flags, cpu->reg_E);
+            flags_test_P(&cpu->flags, cpu->reg_E);
             break;
         case 0x14: //RL H
             instruction_rl(cpu, &cpu->reg_H);
             flags_test_ZS(&cpu->flags, cpu->reg_H);
+            flags_test_P(&cpu->flags, cpu->reg_H);
             break;
         case 0x15: //RL L
             instruction_rl(cpu, &cpu->reg_L);
             flags_test_ZS(&cpu->flags, cpu->reg_L);
+            flags_test_P(&cpu->flags, cpu->reg_L);
             break;
         case 0x16: //RL (HL)
             instruction_rl(cpu, &PTR(HL));
             flags_test_ZS(&cpu->flags, PTR(HL));
+            flags_test_P(&cpu->flags, PTR(HL));
             break;
         case 0x17: //RL A
             instruction_rl(cpu, &cpu->reg_A);
             flags_test_ZS(&cpu->flags, cpu->reg_A);
+            flags_test_P(&cpu->flags, cpu->reg_A);
             break;
         case 0x18: //RR B
             instruction_rr(cpu, &cpu->reg_B);
             flags_test_ZS(&cpu->flags, cpu->reg_B);
+            flags_test_P(&cpu->flags, cpu->reg_B);
             break;
         case 0x19: //RR C
             instruction_rr(cpu, &cpu->reg_C);
             flags_test_ZS(&cpu->flags, cpu->reg_C);
+            flags_test_P(&cpu->flags, cpu->reg_C);
             break;
         case 0x1a: //RR D
             instruction_rr(cpu, &cpu->reg_D);
             flags_test_ZS(&cpu->flags, cpu->reg_D);
+            flags_test_P(&cpu->flags, cpu->reg_D);
             break;
         case 0x1b: //RR E
             instruction_rr(cpu, &cpu->reg_E);
             flags_test_ZS(&cpu->flags, cpu->reg_E);
+            flags_test_P(&cpu->flags, cpu->reg_E);
             break;
         case 0x1c: //RR H
             instruction_rr(cpu, &cpu->reg_H);
             flags_test_ZS(&cpu->flags, cpu->reg_H);
+            flags_test_P(&cpu->flags, cpu->reg_H);
             break;
         case 0x1d: //RR L
             instruction_rr(cpu, &cpu->reg_L);
             flags_test_ZS(&cpu->flags, cpu->reg_L);
+            flags_test_P(&cpu->flags, cpu->reg_L);
             break;
         case 0x1e: //RR (HL)
             instruction_rr(cpu, &PTR(HL));
             flags_test_ZS(&cpu->flags, PTR(HL));
+            flags_test_P(&cpu->flags, PTR(HL));
             break;
         case 0x1f: //RR A
             instruction_rr(cpu, &cpu->reg_A);
             flags_test_ZS(&cpu->flags, cpu->reg_A);
+            flags_test_P(&cpu->flags, cpu->reg_A);
             break;
         case 0x20: //SLA B
             instruction_sla(cpu, &cpu->reg_B);
