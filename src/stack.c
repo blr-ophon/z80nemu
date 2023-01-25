@@ -1,5 +1,5 @@
-#include "../include/stack.h"
-#include "../include/cpu.h"
+#include "stack.h"
+#include "cpu.h"
 
 void stack_push16(struct cpu8080 *cpu, uint16_t value){
     cpu->memory->memory[--cpu->SP] = (value >> 8); 

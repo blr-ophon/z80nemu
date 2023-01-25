@@ -1,5 +1,5 @@
-#include "../include/registerbank.h"
-#include "../include/cpu.h"
+#include "registerbank.h"
+#include "cpu.h"
 
 
 void write_reg_BC(Cpu8080 *cpu, uint16_t value){

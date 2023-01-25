@@ -1,5 +1,5 @@
-#include "../include/instructions.h"
-#include "../include/cpu.h"
+#include "instructions.h"
+#include "cpu.h"
 
 void instruction_res_set(struct cpu8080 *cpu, uint8_t opcode, bool bit_state){
     //instruction format: 00bbbrrr, to set/reset bit b of register r 

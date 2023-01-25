@@ -1,4 +1,4 @@
-#include "../include/flags.h"
+#include "flags.h"
 
 void test_normal_flags(Flags *flags, uint8_t result){
     //tests z, s p and ac flags

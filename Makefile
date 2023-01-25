@@ -14,8 +14,6 @@ OBJECTS := $(CFILES:$(CFILES_DIR)/%.c=$(BUILD_DIR)/%.o)
 MERGED_OBJECT := ./cpuZ80.o
 EXEC := ./cpuZ80test
 
-all: ${EXEC}
-
 ${EXEC}: ${MERGED_OBJECT}
 	gcc ${CFLAGS} ${INCLUDES} $^ -o $@
 
@@ -34,7 +32,7 @@ clean:
 testleak: ${EXEC}
 	valgrind --leak-check=full --show-leak-kinds=all ./$^ ./tests/TST8080.COM
 
-testrom-all: testrom1 testrom2 testrom3
+test-8080: testrom1 testrom2 testrom3
 
 testrom1: ${EXEC} 
 	./$< ./tests/TST8080.COM 

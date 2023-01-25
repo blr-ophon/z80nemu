@@ -8,12 +8,12 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
-#include "./stack.h"
-#include "./memory.h"
-#include "./flags.h"
-#include "./registerbank.h"
-#include "./instructions.h"
-#include "./config.h"
+#include "stack.h"
+#include "memory.h"
+#include "flags.h"
+#include "registerbank.h"
+#include "instructions.h"
+#include "config.h"
 
 typedef struct cpu8080{
     Memory *memory;

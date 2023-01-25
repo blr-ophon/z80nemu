@@ -1,4 +1,4 @@
-#include "../include/opcodelog.h" 
+#include "opcodelog.h" 
 
 uint8_t used_opcodes[0xff] = {0xff}; 
 //TODO: Implement this in other way, 

@@ -1,4 +1,4 @@
-#include "../include/memory.h" 
+#include "memory.h" 
 #include <assert.h>
 
 static void check_boundaries(Memory *memory, uint16_t address){

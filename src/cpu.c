@@ -1,4 +1,4 @@
-#include "../include/cpu.h"
+#include "cpu.h"
 
 static void unimplemented_opcode(Cpu8080 *cpu, uint8_t *opcode){
     fprintf(stderr, "Unimplemented Opcode: %02X\n", *opcode);
