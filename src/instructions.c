@@ -1,5 +1,15 @@
+#include <assert.h>
 #include "instructions.h"
 #include "cpu.h"
+
+void instruction_inc_8(struct cpu8080 *cpu, uint8_t *reg_x, int8_t addend){
+    assert(addend == 1 || addend == -1);
+    cpu->flags.n = addend == 1? 0 : 1;
+    flags_test_H(&cpu->flags, *reg_x, addend, 0);
+    flags_test_V(&cpu->flags, *reg_x, addend);
+    (*reg_x) += addend;
+    flags_test_ZS(&cpu->flags, *reg_x);
+}
 
 void instruction_res_set(struct cpu8080 *cpu, uint8_t opcode, bool bit_state){
     //instruction format: 00bbbrrr, to set/reset bit b of register r 
@@ -78,7 +88,7 @@ void instruction_bit(struct cpu8080 *cpu, uint8_t opcode){
 }
 
 void instruction_sla(struct cpu8080 *cpu, uint8_t *reg_x){
-    uint8_t bit7 = *reg_x & 0b10000000;
+    uint8_t bit7 = *reg_x & 0x80;
     *reg_x <<= 1;
 
     if(bit7){
@@ -88,13 +98,13 @@ void instruction_sla(struct cpu8080 *cpu, uint8_t *reg_x){
     }
     cpu->flags.n = 0;
     cpu->flags.ac = 0;
-    test_normal_flags(&cpu->flags, *reg_x);
+    flags_test_ZS(&cpu->flags, *reg_x);
 }
 
 void instruction_sra(struct cpu8080 *cpu, uint8_t *reg_x){
     //convert to signed to shift right arithmetically
     int8_t temp = *reg_x;
-    uint8_t bit0 = temp & 0b00000001;
+    uint8_t bit0 = temp & 0x01;
     temp >>= 1;
 
     if(bit0){
@@ -104,12 +114,12 @@ void instruction_sra(struct cpu8080 *cpu, uint8_t *reg_x){
     }
     cpu->flags.n = 0;
     cpu->flags.ac = 0;
-    test_normal_flags(&cpu->flags, temp);
+    flags_test_ZS(&cpu->flags, temp);
     *reg_x = temp;
 }
 
 void instruction_srl(struct cpu8080 *cpu, uint8_t *reg_x){
-    uint8_t bit0 = *reg_x & 0b00000001;
+    uint8_t bit0 = *reg_x & 0x01;
     *reg_x >>= 1;
     //reg_x is unsigned, so right shift is logic
 
@@ -120,11 +130,11 @@ void instruction_srl(struct cpu8080 *cpu, uint8_t *reg_x){
     }
     cpu->flags.n = 0;
     cpu->flags.ac = 0;
-    test_normal_flags(&cpu->flags, *reg_x);
+    flags_test_ZS(&cpu->flags, *reg_x);
 }
 
 void instruction_rl(struct cpu8080 *cpu, uint8_t *reg_x){
-    uint8_t bit7 = *reg_x & 0b10000000;
+    uint8_t bit7 = *reg_x & 0x80;
     *reg_x <<= 1;
     if(cpu->flags.cy){
         *reg_x |= 0x01;
@@ -138,11 +148,12 @@ void instruction_rl(struct cpu8080 *cpu, uint8_t *reg_x){
         cpu->flags.cy = 0;
     }
     cpu->flags.n = 0;
-//    cpu->flags.ac = 0;
+    //NOTE: this flag is unaffected in 8080
+    cpu->flags.ac = 0;
 }
 
 void instruction_rr(struct cpu8080 *cpu, uint8_t *reg_x){
-    uint8_t bit0 = *reg_x & 0b00000001;
+    uint8_t bit0 = *reg_x & 0x01;
     *reg_x >>= 1;
     if(cpu->flags.cy){
         *reg_x |= 0x80;
@@ -156,54 +167,57 @@ void instruction_rr(struct cpu8080 *cpu, uint8_t *reg_x){
         cpu->flags.cy = 0;
     }
     cpu->flags.n = 0;
-//    cpu->flags.ac = 0;
+    //NOTE: this flag is unaffected in 8080
+    cpu->flags.ac = 0;
 }
 
 void instruction_rlc(struct cpu8080 *cpu, uint8_t *reg_x){
-    uint8_t bit7 = *reg_x & 0b10000000;
+    uint8_t bit7 = *reg_x & 0x80;
     *reg_x <<= 1;
     if(bit7){
         cpu->flags.cy = 1;
-        *reg_x |= 0b00000001;
+        *reg_x |= 0x01;
     }else{
         cpu->flags.cy = 0;
-        *reg_x &= ~0b00000001;
+        *reg_x &= ~0x01;
     }
     cpu->flags.n = 0;
-//    cpu->flags.ac = 0;
+    //NOTE: this flag is unaffected in 8080
+    cpu->flags.ac = 0;
 }
 
 void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x){
-    uint8_t bit0 = *reg_x & 0b00000001;
+    uint8_t bit0 = *reg_x & 0x01;
     *reg_x >>= 1;
     if(bit0){
         cpu->flags.cy = 1;
-        *reg_x |= 0b10000000;
+        *reg_x |= 0x80;
     }else{
         cpu->flags.cy = 0;
-        *reg_x &= ~0b10000000;
+        *reg_x &= ~0x80;
     }
     cpu->flags.n = 0;
-//    cpu->flags.ac = 0;
+    //NOTE: this flag is unaffected in 8080
+    cpu->flags.ac = 0;
 }
 
 void instruction_add(struct cpu8080 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + reg_x;
-    test_flag_ac(&cpu->flags, cpu->reg_A, reg_x, 0);
-    test_carry_flag8(&cpu->flags, result);
+    flags_test_H(&cpu->flags, cpu->reg_A, reg_x, 0);
+    flags_test_C8(&cpu->flags, result);
 
     cpu->reg_A = result;
-    test_normal_flags(&cpu->flags, cpu->reg_A);
+    flags_test_ZS(&cpu->flags, cpu->reg_A);
     cpu->flags.n = 0;
 }
 
 void instruction_adc(struct cpu8080 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + reg_x + cpu->flags.cy;
-    test_flag_ac(&cpu->flags, cpu->reg_A, reg_x, cpu->flags.cy);
-    test_carry_flag8(&cpu->flags, result);
+    flags_test_H(&cpu->flags, cpu->reg_A, reg_x, cpu->flags.cy);
+    flags_test_C8(&cpu->flags, result);
 
     cpu->reg_A = result;
-    test_normal_flags(&cpu->flags, cpu->reg_A);
+    flags_test_ZS(&cpu->flags, cpu->reg_A);
     cpu->flags.n = 0;
 }
 
@@ -215,8 +229,8 @@ void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x){
         cpu->flags.cy = 1;
     }
 
-    test_flag_ac(&cpu->flags, cpu->reg_A, ~reg_x, 1);
-    test_normal_flags(&cpu->flags, result);
+    flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, 1);
+    flags_test_ZS(&cpu->flags, result);
     cpu->reg_A = result;
     cpu->flags.cy = ~(cpu->flags.cy) & 0x01;
     cpu->flags.n = 1;
@@ -231,8 +245,8 @@ void instruction_sbb(struct cpu8080 *cpu, uint8_t reg_x){
         cpu->flags.cy = 1;
     }
 
-    test_flag_ac(&cpu->flags, cpu->reg_A, ~reg_x, borrow);
-    test_normal_flags(&cpu->flags, result);
+    flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, borrow);
+    flags_test_ZS(&cpu->flags, result);
     cpu->reg_A = result;
     cpu->flags.cy = ~cpu->flags.cy & 0x01;
     cpu->flags.n = 1;
@@ -245,7 +259,7 @@ void instruction_cmp(struct cpu8080 *cpu, uint8_t reg_x){
     if(~(cpu->reg_A ^ result ^ reg_x) & 0x10){
         cpu->flags.ac = 1;
     }
-    test_normal_flags(&cpu->flags, (uint8_t) result);
+    flags_test_ZS(&cpu->flags, (uint8_t) result);
     cpu->flags.n = 1;
 }
 
@@ -257,7 +271,7 @@ void instruction_ana(struct cpu8080 *cpu, uint8_t reg_x){
     if(((cpu->reg_A | reg_x) & 0x08) != 0){
         cpu->flags.ac = 1;
     }
-    test_normal_flags(&cpu->flags, result);
+    flags_test_ZS(&cpu->flags, result);
     cpu->reg_A = result;
 }
 
@@ -266,7 +280,7 @@ void instruction_xra(struct cpu8080 *cpu, uint8_t reg_x){
     cpu->flags.ac = 0;
     cpu->flags.cy = 0;
     cpu->flags.n = 0;
-    test_normal_flags(&cpu->flags, cpu->reg_A);
+    flags_test_ZS(&cpu->flags, cpu->reg_A);
 }
 
 void instruction_ora(struct cpu8080 *cpu, uint8_t reg_x){
@@ -274,7 +288,7 @@ void instruction_ora(struct cpu8080 *cpu, uint8_t reg_x){
     cpu->flags.ac = 0;
     cpu->flags.cy = 0;
     cpu->flags.n = 0;
-    test_normal_flags(&cpu->flags, cpu->reg_A);
+    flags_test_ZS(&cpu->flags, cpu->reg_A);
 }
 
 

@@ -30,17 +30,7 @@ void cpu_fetch_execute(Cpu8080 *cpu){
     }
 
     uint8_t opcode = memory_read8(cpu->memory, cpu->PC);
-//    printf("%#04x\n", opcode);
     cpu_exec_instruction(cpu, &opcode);
-
-    /*
-    if(cpu->step_count > 5869894){ //starting step for log
-        insert_opcode(opcode);
-    }
-    if(cpu->step_count > 6010000 ){ //final step for log
-        exit(1);
-    }
-    */
     cpu->PC ++;
     cpu->step_count++;
 }
@@ -62,7 +52,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->memory->memory[adr] = cpu->reg_A;
             break;
             }
-        case 0x03: //INX B 
+        case 0x03: //INC BC 
             {
             uint16_t word = read_reg_BC(cpu);
             word ++;
@@ -70,16 +60,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x04: //INC B 
-            cpu->flags.n = 0;
-            test_flag_ac(&cpu->flags, cpu->reg_B, 0x01, 0);
-            cpu->reg_B++;
-            test_normal_flags(&cpu->flags, cpu->reg_B);
+            instruction_inc_8(cpu, &cpu->reg_B, 1);
             break;
         case 0x05: //DEC B 
-            cpu->flags.n = 1;
-            test_flag_ac(&cpu->flags, cpu->reg_B, 0xff, 0); 
-            cpu->reg_B--;
-            test_normal_flags(&cpu->flags, cpu->reg_B);
+            instruction_inc_8(cpu, &cpu->reg_B, -1);
             break;
         case 0x06: //MVI B, byte 
             cpu->reg_B = memory_read8(cpu->memory, ++cpu->PC);
@@ -92,7 +76,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->flags.n = 0;
             uint16_t word1 = read_reg_HL(cpu);
             uint16_t word2 = read_reg_BC(cpu);
-            test_carry_flag16(&cpu->flags, (uint32_t) word1 + word2);
+            flags_test_C16(&cpu->flags, (uint32_t) word1 + word2);
             word1 += word2;
             write_reg_HL(cpu, word1);
             break;
@@ -110,16 +94,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x0c: //INC C 
-            cpu->flags.n = 0;
-            test_flag_ac(&cpu->flags, cpu->reg_C, 0x01, 0);
-            cpu->reg_C++;
-            test_normal_flags(&cpu->flags, cpu->reg_C);
+            instruction_inc_8(cpu, &cpu->reg_C, 1);
             break;
         case 0x0d: //DEC C 
-            cpu->flags.n = 1;
-            test_flag_ac(&cpu->flags, cpu->reg_C, 0xff, 0);
-            cpu->reg_C--;
-            test_normal_flags(&cpu->flags, cpu->reg_C);
+            instruction_inc_8(cpu, &cpu->reg_C, -1);
             break;
         case 0x0e: //MVI C, byte 
             cpu->reg_C = memory_read8(cpu->memory, ++cpu->PC);
@@ -146,16 +124,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x14: //INC D 
-            cpu->flags.n = 0;
-            test_flag_ac(&cpu->flags, cpu->reg_D, 0x01, 0);
-            cpu->reg_D++;
-            test_normal_flags(&cpu->flags, cpu->reg_D);
+            instruction_inc_8(cpu, &cpu->reg_D, 1);
             break;
         case 0x15: //DEC D 
-            cpu->flags.n = 1;
-            test_flag_ac(&cpu->flags, cpu->reg_D, 0xff, 0);
-            cpu->reg_D--;
-            test_normal_flags(&cpu->flags, cpu->reg_D);
+            instruction_inc_8(cpu, &cpu->reg_D, -1);
             break;
         case 0x16: //MVI D, byte 
             cpu->reg_D = memory_read8(cpu->memory, ++cpu->PC);
@@ -168,7 +140,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->flags.n = 0;
             uint16_t word1 = read_reg_HL(cpu);
             uint16_t word2 = read_reg_DE(cpu);
-            test_carry_flag16(&cpu->flags, (uint32_t) word1 + word2);
+            flags_test_C16(&cpu->flags, (uint32_t) word1 + word2);
             word1 += word2;
             write_reg_HL(cpu, word1);
             break;
@@ -186,16 +158,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x1c: //INC E 
-            cpu->flags.n = 0;
-            test_flag_ac(&cpu->flags, cpu->reg_E, 0x01, 0);
-            cpu->reg_E++;
-            test_normal_flags(&cpu->flags, cpu->reg_E);
+            instruction_inc_8(cpu, &cpu->reg_E, 1);
             break;
         case 0x1d: //DEC E 
-            cpu->flags.n = 1;
-            test_flag_ac(&cpu->flags, cpu->reg_E, 0xff, 0);
-            cpu->reg_E--;
-            test_normal_flags(&cpu->flags, cpu->reg_E);
+            instruction_inc_8(cpu, &cpu->reg_E, -1);
             break;
         case 0x1e: //MVI E, byte 
             cpu->reg_E = memory_read8(cpu->memory, ++cpu->PC);
@@ -223,16 +189,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x24: //INC H 
-            cpu->flags.n = 0;
-            test_flag_ac(&cpu->flags, cpu->reg_H, 0x01, 0);
-            cpu->reg_H++;
-            test_normal_flags(&cpu->flags, cpu->reg_H);
+            instruction_inc_8(cpu, &cpu->reg_H, 1);
             break;
         case 0x25: //DEC H 
-            cpu->flags.n = 1;
-            test_flag_ac(&cpu->flags, cpu->reg_H, 0xff, 0);
-            cpu->reg_H--;
-            test_normal_flags(&cpu->flags, cpu->reg_H);
+            instruction_inc_8(cpu, &cpu->reg_H, -1);
             break;
         case 0x26: //MVI H, byte 
             cpu->reg_H = memory_read8(cpu->memory, ++cpu->PC);
@@ -262,7 +222,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->flags.n = 0;
             uint16_t word1 = read_reg_HL(cpu);
             uint16_t word2 = read_reg_HL(cpu);
-            test_carry_flag16(&cpu->flags, (uint32_t) word1 + word2);
+            flags_test_C16(&cpu->flags, (uint32_t) word1 + word2);
             word1 += word2;
             write_reg_HL(cpu, word1);
             break;
@@ -281,16 +241,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x2c: //INC L
-            cpu->flags.n = 0;
-            test_flag_ac(&cpu->flags, cpu->reg_L, 0x01, 0);
-            cpu->reg_L++;
-            test_normal_flags(&cpu->flags, cpu->reg_L);
+            instruction_inc_8(cpu, &cpu->reg_L, 1);
             break;
         case 0x2d: //DEC L
-            cpu->flags.n = 1;
-            test_flag_ac(&cpu->flags, cpu->reg_L, 0xff, 0);
-            cpu->reg_L--;
-            test_normal_flags(&cpu->flags, cpu->reg_L);
+            instruction_inc_8(cpu, &cpu->reg_L, -1);
             break;
         case 0x2e: //MVI L, byte
             cpu->reg_L = memory_read8(cpu->memory, ++cpu->PC);
@@ -315,16 +269,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->SP ++;
             break;
         case 0x34: //INC M 
-            cpu->flags.n = 0;
-            test_flag_ac(&cpu->flags, PTR(HL), 0x01, 0);
-            PTR(HL)++;
-            test_normal_flags(&cpu->flags, PTR(HL));
+            instruction_inc_8(cpu, &PTR(HL), 1);
             break;
         case 0x35: //DEC M
-            cpu->flags.n = 1;
-            test_flag_ac(&cpu->flags, PTR(HL), 0xff, 0);
-            PTR(HL)--;
-            test_normal_flags(&cpu->flags, PTR(HL));
+            instruction_inc_8(cpu, &PTR(HL), -1);
             break;
         case 0x36: //MVI M,byte
             cpu->memory->memory[read_reg_HL(cpu)] = memory_read8(cpu->memory, ++cpu->PC);
@@ -337,7 +285,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             {
             cpu->flags.n = 0;
             uint16_t word = read_reg_HL(cpu);
-            test_carry_flag16(&cpu->flags, (uint32_t) word + cpu->SP);
+            flags_test_C16(&cpu->flags, (uint32_t) word + cpu->SP);
             word += cpu->SP;
             write_reg_HL(cpu, word);
             break;
@@ -352,16 +300,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->SP --;
             break;
         case 0x3c: //INC A
-            cpu->flags.n = 0;
-            test_flag_ac(&cpu->flags, cpu->reg_A, 0x01, 0);
-            cpu->reg_A++;
-            test_normal_flags(&cpu->flags, cpu->reg_A);
+            instruction_inc_8(cpu, &cpu->reg_A, 1);
             break;
         case 0x3d: //DEC A
-            cpu->flags.n = 1;
-            test_flag_ac(&cpu->flags, cpu->reg_A, 0xff, 0);
-            cpu->reg_A --;
-            test_normal_flags(&cpu->flags, cpu->reg_A);
+            instruction_inc_8(cpu, &cpu->reg_A, -1);
             break;
         case 0x3e: //MVI A,byte
             cpu->reg_A = memory_read8(cpu->memory, ++cpu->PC);
@@ -963,6 +905,12 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
+        case 0xdd: //PREFIX: IX INSTRUCTIONS
+            {
+            uint8_t opcode = memory_read8(cpu->memory, ++cpu->PC);
+            cpu_IX_instructions(cpu, &opcode);
+            break;
+            }
         case 0xde: //SBI byte 
             {
             uint8_t operand = memory_read8(cpu->memory, ++cpu->PC); 
@@ -1167,131 +1115,131 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
         //TODO: Check proper CPU Flags handling
         case 0x00: //RLC B
             instruction_rlc(cpu, &cpu->reg_B);
-            test_normal_flags(&cpu->flags, cpu->reg_B);
+            flags_test_ZS(&cpu->flags, cpu->reg_B);
             break;
         case 0x01: //RLC C
             instruction_rlc(cpu, &cpu->reg_C);
-            test_normal_flags(&cpu->flags, cpu->reg_C);
+            flags_test_ZS(&cpu->flags, cpu->reg_C);
             break;
         case 0x02: //RLC D
             instruction_rlc(cpu, &cpu->reg_D);
-            test_normal_flags(&cpu->flags, cpu->reg_D);
+            flags_test_ZS(&cpu->flags, cpu->reg_D);
             break;
         case 0x03: //RLC E
             instruction_rlc(cpu, &cpu->reg_E);
-            test_normal_flags(&cpu->flags, cpu->reg_E);
+            flags_test_ZS(&cpu->flags, cpu->reg_E);
             break;
         case 0x04: //RLC H
             instruction_rlc(cpu, &cpu->reg_H);
-            test_normal_flags(&cpu->flags, cpu->reg_H);
+            flags_test_ZS(&cpu->flags, cpu->reg_H);
             break;
         case 0x05: //RLC L
             instruction_rlc(cpu, &cpu->reg_L);
-            test_normal_flags(&cpu->flags, cpu->reg_L);
+            flags_test_ZS(&cpu->flags, cpu->reg_L);
             break;
         case 0x06: //RLC (HL)
             instruction_rlc(cpu, &PTR(HL));
-            test_normal_flags(&cpu->flags, PTR(HL));
+            flags_test_ZS(&cpu->flags, PTR(HL));
             break;
         case 0x07: //RLC A
             instruction_rlc(cpu, &cpu->reg_A);
-            test_normal_flags(&cpu->flags, cpu->reg_A);
+            flags_test_ZS(&cpu->flags, cpu->reg_A);
             break;
         case 0x08: //RRC B
             instruction_rrc(cpu, &cpu->reg_B);
-            test_normal_flags(&cpu->flags, cpu->reg_B);
+            flags_test_ZS(&cpu->flags, cpu->reg_B);
             break;
         case 0x09: //RRC C
             instruction_rrc(cpu, &cpu->reg_C);
-            test_normal_flags(&cpu->flags, cpu->reg_C);
+            flags_test_ZS(&cpu->flags, cpu->reg_C);
             break;
         case 0x0a: //RRC D
             instruction_rrc(cpu, &cpu->reg_D);
-            test_normal_flags(&cpu->flags, cpu->reg_D);
+            flags_test_ZS(&cpu->flags, cpu->reg_D);
             break;
         case 0x0b: //RRC E
             instruction_rrc(cpu, &cpu->reg_E);
-            test_normal_flags(&cpu->flags, cpu->reg_E);
+            flags_test_ZS(&cpu->flags, cpu->reg_E);
             break;
         case 0x0c: //RRC H
             instruction_rrc(cpu, &cpu->reg_H);
-            test_normal_flags(&cpu->flags, cpu->reg_H);
+            flags_test_ZS(&cpu->flags, cpu->reg_H);
             break;
         case 0x0d: //RRC L
             instruction_rrc(cpu, &cpu->reg_L);
-            test_normal_flags(&cpu->flags, cpu->reg_L);
+            flags_test_ZS(&cpu->flags, cpu->reg_L);
             break;
         case 0x0e: //RRC (HL)
             instruction_rrc(cpu, &PTR(HL));
-            test_normal_flags(&cpu->flags, PTR(HL));
+            flags_test_ZS(&cpu->flags, PTR(HL));
             break;
         case 0x0f: //RRC A
             instruction_rrc(cpu, &cpu->reg_A);
-            test_normal_flags(&cpu->flags, cpu->reg_A);
+            flags_test_ZS(&cpu->flags, cpu->reg_A);
             break;
         case 0x10: //RL B
             instruction_rl(cpu, &cpu->reg_B);
-            test_normal_flags(&cpu->flags, cpu->reg_B);
+            flags_test_ZS(&cpu->flags, cpu->reg_B);
             break;
         case 0x11: //RL C
             instruction_rl(cpu, &cpu->reg_C);
-            test_normal_flags(&cpu->flags, cpu->reg_C);
+            flags_test_ZS(&cpu->flags, cpu->reg_C);
             break;
         case 0x12: //RL D
             instruction_rl(cpu, &cpu->reg_D);
-            test_normal_flags(&cpu->flags, cpu->reg_D);
+            flags_test_ZS(&cpu->flags, cpu->reg_D);
             break;
         case 0x13: //RL E
             instruction_rl(cpu, &cpu->reg_E);
-            test_normal_flags(&cpu->flags, cpu->reg_E);
+            flags_test_ZS(&cpu->flags, cpu->reg_E);
             break;
         case 0x14: //RL H
             instruction_rl(cpu, &cpu->reg_H);
-            test_normal_flags(&cpu->flags, cpu->reg_H);
+            flags_test_ZS(&cpu->flags, cpu->reg_H);
             break;
         case 0x15: //RL L
             instruction_rl(cpu, &cpu->reg_L);
-            test_normal_flags(&cpu->flags, cpu->reg_L);
+            flags_test_ZS(&cpu->flags, cpu->reg_L);
             break;
         case 0x16: //RL (HL)
             instruction_rl(cpu, &PTR(HL));
-            test_normal_flags(&cpu->flags, PTR(HL));
+            flags_test_ZS(&cpu->flags, PTR(HL));
             break;
         case 0x17: //RL A
             instruction_rl(cpu, &cpu->reg_A);
-            test_normal_flags(&cpu->flags, cpu->reg_A);
+            flags_test_ZS(&cpu->flags, cpu->reg_A);
             break;
         case 0x18: //RR B
             instruction_rr(cpu, &cpu->reg_B);
-            test_normal_flags(&cpu->flags, cpu->reg_B);
+            flags_test_ZS(&cpu->flags, cpu->reg_B);
             break;
         case 0x19: //RR C
             instruction_rr(cpu, &cpu->reg_C);
-            test_normal_flags(&cpu->flags, cpu->reg_C);
+            flags_test_ZS(&cpu->flags, cpu->reg_C);
             break;
         case 0x1a: //RR D
             instruction_rr(cpu, &cpu->reg_D);
-            test_normal_flags(&cpu->flags, cpu->reg_D);
+            flags_test_ZS(&cpu->flags, cpu->reg_D);
             break;
         case 0x1b: //RR E
             instruction_rr(cpu, &cpu->reg_E);
-            test_normal_flags(&cpu->flags, cpu->reg_E);
+            flags_test_ZS(&cpu->flags, cpu->reg_E);
             break;
         case 0x1c: //RR H
             instruction_rr(cpu, &cpu->reg_H);
-            test_normal_flags(&cpu->flags, cpu->reg_H);
+            flags_test_ZS(&cpu->flags, cpu->reg_H);
             break;
         case 0x1d: //RR L
             instruction_rr(cpu, &cpu->reg_L);
-            test_normal_flags(&cpu->flags, cpu->reg_L);
+            flags_test_ZS(&cpu->flags, cpu->reg_L);
             break;
         case 0x1e: //RR (HL)
             instruction_rr(cpu, &PTR(HL));
-            test_normal_flags(&cpu->flags, PTR(HL));
+            flags_test_ZS(&cpu->flags, PTR(HL));
             break;
         case 0x1f: //RR A
             instruction_rr(cpu, &cpu->reg_A);
-            test_normal_flags(&cpu->flags, cpu->reg_A);
+            flags_test_ZS(&cpu->flags, cpu->reg_A);
             break;
         case 0x20: //SLA B
             instruction_sla(cpu, &cpu->reg_B);
@@ -1374,6 +1322,28 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
         case 0xc0 ... 0xff: //SET byte, REG
             instruction_res_set(cpu, *opcode, 1);
             break;
+    }
+}
+
+void cpu_IX_instructions(Cpu8080 *cpu, uint8_t *opcode){
+    switch(*opcode){
+        case 0x09: //ADD IX,BC
+            {
+            uint16_t operand = read_reg_BC(cpu);
+            uint32_t result = cpu->reg_IX + operand;
+            if(result & 0x10000){
+                cpu->flags.cy = 1;
+            }else cpu->flags.cy = 0;
+
+            if(result & 0x8000){
+                cpu->flags.n = 1;
+            }else cpu->flags.n = 0;
+
+            break;
+            }
+        case 0x19: //ADD IX,DE
+            break;
+
     }
 }
 

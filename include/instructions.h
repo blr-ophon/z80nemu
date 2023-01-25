@@ -6,6 +6,8 @@
 
 struct cpu8080;
 
+void instruction_inc_8(struct cpu8080 *cpu, uint8_t *reg_x, int8_t addend);
+
 void instruction_res_set(struct cpu8080 *cpu, uint8_t opcode, bool bit_state);
 
 void instruction_bit(struct cpu8080 *cpu, uint8_t opcode);
