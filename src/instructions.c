@@ -1,6 +1,75 @@
 #include <assert.h>
-#include "instructions.h"
 #include "cpu.h"
+
+void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
+    //instruction format: 01RRRrrr, store contents of r to R 
+    //
+    uint8_t reg1 = (opcode & 0x38) >> 3;
+    uint8_t reg2 = opcode & 0x03;
+    uint16_t adr = 0;
+
+    //create a copy of IX or IY in separate 8 bit registers
+    uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
+    uint8_t reg_IXYH = ((*ix_or_iy) & 0xff00) >> 8;
+    uint8_t reg_IXYL = (*ix_or_iy);
+
+    uint8_t *regsPtrs[] = {
+        &cpu->reg_B,
+        &cpu->reg_C,
+        &cpu->reg_D,
+        &cpu->reg_E,
+        &reg_IXYH,
+        &reg_IXYL,
+        NULL,
+        &cpu->reg_A
+    };
+
+    //exceptional cases (documented instructions)
+    if(reg1 == 6 || reg2 == 6){
+        adr = (*ix_or_iy) + memory_read8(cpu->memory, ++cpu->PC);
+        regsPtrs[6] = &cpu->memory->memory[adr];
+        regsPtrs[5] = &cpu->reg_L;
+        regsPtrs[4] = &cpu->reg_H;
+    }
+
+    //LD (*targetPtr),(*sourcePtr) 
+    uint8_t *sourcePtr = regsPtrs[reg2];
+    uint8_t *targetPtr = regsPtrs[reg1];
+    *targetPtr = *sourcePtr;
+
+    //load modified copy back to IX or IY register
+    (*ix_or_iy) = ((reg_IXYH) << 8) | (reg_IXYL);
+}
+
+void instruction_ld(struct cpu8080 *cpu, uint8_t opcode){
+    //instruction format: 01RRRrrr, store contents of r to R 
+    //
+    //IMPORTANT: Doesnt work with opcode 0x76, which would be LD (HL),(HL),
+    //but instead is HALT
+    //
+    uint8_t reg1 = (opcode & 0x38) >> 3;
+    uint8_t reg2 = opcode & 0x03;
+
+    uint16_t adr = 0;
+    if(reg1 == 6 || reg2 == 6){
+        adr = read_reg_HL(cpu);
+    }
+
+    uint8_t *regs[] = {
+        &cpu->reg_B,
+        &cpu->reg_C,
+        &cpu->reg_D,
+        &cpu->reg_E,
+        &cpu->reg_H,
+        &cpu->reg_L,
+        &cpu->memory->memory[adr],
+        &cpu->reg_A
+    };
+
+    uint8_t *sourcePtr = regs[reg2];
+    uint8_t *targetPtr = regs[reg1];
+    *targetPtr = *sourcePtr;
+}
 
 void instruction_inc_8(struct cpu8080 *cpu, uint8_t *reg_x, int8_t addend){
     assert(addend == 1 || addend == -1);

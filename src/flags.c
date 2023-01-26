@@ -25,19 +25,8 @@ void flags_test_P(Flags *flags, uint8_t result){
 }
 
 void flags_test_ZS(Flags *flags, uint8_t result){
-    //tests z, s p and ac flags
-    //
-    if(result == 0){
-        flags->z = 1;
-    }else{
-        flags->z = 0;
-    }
-
-    if(result & 0x80){
-        flags->s = 1;
-    }else{
-        flags->s = 0;
-    }
+    flags->z = result == 0? 1 : 0;
+    flags->s = result & 0x80? 1 : 0;
 }
 
 void flags_test_H(Flags *flags, uint8_t value, uint8_t operand, uint8_t carry){
@@ -49,10 +38,7 @@ void flags_test_H(Flags *flags, uint8_t value, uint8_t operand, uint8_t carry){
     uint8_t result = value + operand + carry;
     uint8_t changes = result ^ value ^ operand;
 
-    flags->ac = 0;
-    if(changes > 0x0f){
-        flags->ac = 1;
-    }
+    flags->ac = changes > 0x0f? 1 : 0;
 }
 
 void flags_test_H16(Flags *flags, uint16_t value, uint16_t operand, uint8_t carry){
@@ -64,26 +50,15 @@ void flags_test_H16(Flags *flags, uint16_t value, uint16_t operand, uint8_t carr
     uint16_t result = value + operand + carry;
     uint16_t changes = result ^ value ^ operand;
 
-    flags->ac = 0;
-    if(changes > 0x0fff){
-        flags->ac = 1;
-    }
+    flags->ac = changes > 0x0fff? 1 : 0;
 }
 
 void flags_test_C8(Flags *flags, uint16_t result){
-    if(result & 0x100){
-        flags->cy = 1;
-    }else{
-        flags->cy = 0;
-    }
+    flags->cy = result & 0x100? 1 : 0;
 }
 
 void flags_test_C16(Flags *flags, uint32_t result){
-    if(result > 0xffff){
-        flags->cy = 1;
-    }else{
-        flags->cy = 0;
-    }
+    flags->cy = result & 0x10000? 1 : 0;
 }
 
 uint8_t flags_load_byte(Flags *flags){
@@ -92,8 +67,7 @@ uint8_t flags_load_byte(Flags *flags){
     flags_reg |= flags->z << 6;     //01000000
     flags_reg |= flags->ac << 4;    //00010000
     flags_reg |= flags->p << 2;     //00000100
-    flags_reg |= 0x02;              //00000010
-//    flags_reg |= flags->n << 1;     //00000010
+    flags_reg |= flags->n << 1;     //00000010
     flags_reg |= flags->cy;         //00000001        
     return flags_reg;
 }

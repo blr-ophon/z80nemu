@@ -363,6 +363,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->flags.cy = ~cpu->flags.cy;
             break;
         case 0x40: //LD B,B 
+            //TODO: use instruction_ld from here onwards
             cpu->reg_B = cpu->reg_B;
             break;
         case 0x41: //LD B,C
@@ -966,7 +967,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0xdd: //PREFIX: IX INSTRUCTIONS
             {
             uint8_t opcode = memory_read8(cpu->memory, ++cpu->PC);
-            //cpu_IX_instructions(cpu, &opcode);
+            cpu_IXY_instructions(cpu, &opcode, 0);
             break;
             }
         case 0xde: //SBC A,n
@@ -1169,6 +1170,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
 }
 
 void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
+    //TODO: use pointer to functions to reduce lines of code here
     switch(*opcode){
         //TODO: Check proper CPU Flags handling
         case 0x00: //RLC B
@@ -1415,25 +1417,136 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
     }
 }
 
-void cpu_IX_instructions(Cpu8080 *cpu, uint8_t *opcode){
+void instruction_DDED_add(Flags *flags, uint16_t *ix_or_iy, uint16_t reg_pair){
+    uint32_t result = *ix_or_iy + reg_pair;
+    flags->cy = result & 0x10000? 1: 0;
+    flags->n = 0;
+    flags_test_H16(flags, *ix_or_iy, reg_pair, 0);
+    *ix_or_iy = result; 
+}
+
+
+void cpu_IXY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
+    uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
     switch(*opcode){
         case 0x09: //ADD IX,BC
+            instruction_DDED_add(&cpu->flags, ix_or_iy, read_reg_BC(cpu));
+            break;
+        case 0x19: //ADD IX,DE
+            instruction_DDED_add(&cpu->flags, ix_or_iy, read_reg_DE(cpu));
+            break;
+        case 0x21: //LD IX,nn
+            *ix_or_iy = cpu_GetLIWord(cpu);
+            break;
+        case 0x22: //LD (nn),IX
             {
-            uint16_t operand = read_reg_BC(cpu);
-            uint32_t result = cpu->reg_IX + operand;
-            if(result & 0x10000){
-                cpu->flags.cy = 1;
-            }else cpu->flags.cy = 0;
-
-            if(result & 0x8000){
-                cpu->flags.n = 1;
-            }else cpu->flags.n = 0;
-
+            uint16_t adr = cpu_GetLIWord(cpu);
+            cpu->memory->memory[adr] = *ix_or_iy;
             break;
             }
-        case 0x19: //ADD IX,DE
+        case 0x23: //INC IX
+            (*ix_or_iy) ++;
+            break;
+        case 0x29: //ADD IX,IX
+            instruction_DDED_add(&cpu->flags, ix_or_iy, *ix_or_iy);
+            break;
+        case 0x2a: //LD IX,(nn)
+            {
+            uint16_t adr = cpu_GetLIWord(cpu);
+            *ix_or_iy = cpu->memory->memory[adr];
+            break;
+            }
+        case 0x2b: //DEC IX
+            (*ix_or_iy) --;
+            break;
+        case 0x34: //INC (IX+d)
+            {
+            uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
+            cpu->memory->memory[adr] ++;
+            break;
+            }
+        case 0x35: //DEC (IX+d)
+            {
+            uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
+            cpu->memory->memory[adr] --;
+            break;
+            }
+        case 0x36: //LD (IX+d),n
+            {
+            uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
+            cpu->memory->memory[adr] = memory_read8(cpu->memory, ++cpu->PC);
+            break;
+            }
+        case 0x39: //ADD IX,SP
+            instruction_DDED_add(&cpu->flags, ix_or_iy, cpu->SP);
+            break;
+        case 0x40 ... 0x79: //LD reg1,reg2 
+            instruction_ld_IXIY(cpu, *opcode, iy_mode);
             break;
 
+        case 0x86: //ADD A,(IX/Y+d)
+            {
+            uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
+            instruction_add(cpu, cpu->memory->memory[adr]); 
+            break;
+            }
+        case 0x96: //SUB A,(IX/Y+d)
+            {
+            uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
+            instruction_sub(cpu, cpu->memory->memory[adr]); 
+            break;
+            }
+        case 0x9e: //SBC A,(IX/Y+d)
+            {
+            uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
+            instruction_sbc(cpu, cpu->memory->memory[adr]); 
+            break;
+            }
+        case 0xa6: //AND A,(IX/Y+d)
+            {
+            uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
+            instruction_ana(cpu, cpu->memory->memory[adr]); 
+            break;
+            }
+        case 0xae: //XOR A,(IX/Y+d)
+            {
+            uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
+            instruction_xra(cpu, cpu->memory->memory[adr]); 
+            break;
+            }
+        case 0xb6: //OR A,(IX/Y+d)
+            {
+            uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
+            instruction_ora(cpu, cpu->memory->memory[adr]); 
+            break;
+            }
+        case 0xbe: //XOR A,(IX/Y+d)
+            {
+            uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
+            instruction_cmp(cpu, cpu->memory->memory[adr]); 
+            break;
+            }
+        case 0xcb: //PREFIX: IX/Y BIT INSTRUCTIONS
+            break;
+        case 0xe1: //POP IX/Y
+            (*ix_or_iy) = stack_pop16(cpu);
+            break;
+        case 0xe3: //EX (SP),IX/Y
+            {
+            uint16_t temp = cpu->SP;
+            cpu->SP = (*ix_or_iy);
+            (*ix_or_iy) = temp;
+            break;
+            }
+        case 0xe5: //PUSH IX/Y
+            stack_push16(cpu, (*ix_or_iy));
+            break;
+        case 0xe9: //JP (IX)
+            cpu->PC = (*ix_or_iy) - 1;
+            break;
+        case 0xf9: //LD SP,IX
+            cpu->SP = (*ix_or_iy);
+            break;
     }
 }
 
