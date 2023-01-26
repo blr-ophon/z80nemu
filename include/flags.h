@@ -13,7 +13,7 @@ typedef struct flags{
     uint8_t cy:1; //carry
 }Flags;
 
-void flags_test_V(Flags *flags, uint8_t value, uint8_t operand);
+void flags_test_V(Flags *flags, uint8_t a, uint8_t b);
 
 void flags_test_P(Flags *flags, uint8_t result);
 
@@ -24,6 +24,8 @@ void flags_test_C8(Flags *flags, uint16_t result);
 void flags_test_C16(Flags *flags, uint32_t result);
 
 void flags_test_H(Flags *flags, uint8_t value, uint8_t operand, uint8_t carry);
+
+void flags_test_H16(Flags *flags, uint16_t value, uint16_t operand, uint8_t carry);
 
 uint8_t flags_load_byte(Flags *flags);
 

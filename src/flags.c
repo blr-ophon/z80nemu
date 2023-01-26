@@ -1,12 +1,15 @@
 #include "flags.h"
 
 void flags_test_V(Flags *flags, uint8_t a, uint8_t b){
+    //TODO: logic for a+b+carry 
     if((a^b) & 0x80){ //if a and b have different sign bits
         flags->p = 0;
     }
     else{
         uint8_t result = a + b;
+        //compares sign of initial value and result
         uint8_t diff_sign = (a^result) & 0x80;
+        //if the signs different, set overflow
         flags->p = diff_sign >> 7;
     }
 }
@@ -48,6 +51,21 @@ void flags_test_H(Flags *flags, uint8_t value, uint8_t operand, uint8_t carry){
 
     flags->ac = 0;
     if(changes > 0x0f){
+        flags->ac = 1;
+    }
+}
+
+void flags_test_H16(Flags *flags, uint16_t value, uint16_t operand, uint8_t carry){
+    //tests the overflow of bit 11
+    value &=  0x00ff;
+    operand &=  0x00ff;
+    carry &= 0x01;
+    
+    uint16_t result = value + operand + carry;
+    uint16_t changes = result ^ value ^ operand;
+
+    flags->ac = 0;
+    if(changes > 0x0fff){
         flags->ac = 1;
     }
 }

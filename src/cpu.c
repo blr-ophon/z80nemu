@@ -36,11 +36,10 @@ void cpu_fetch_execute(Cpu8080 *cpu){
 }
 
 void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
-    //TODO: Check proper CPU Flags handling
     switch(*opcode){
         case 0x00: //NOP
             break;
-        case 0x01: //LD BC, word 
+        case 0x01: //LD BC,nn
             {
             uint16_t word = cpu_GetLIWord(cpu);
             write_reg_BC(cpu,word);
@@ -65,29 +64,41 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x05: //DEC B 
             instruction_inc_8(cpu, &cpu->reg_B, -1);
             break;
-        case 0x06: //MVI B, byte 
+        case 0x06: //MVI B,n 
             cpu->reg_B = memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x07: //RLCA
             instruction_rlc(cpu, &cpu->reg_A);
             break;
+        case 0x08: //EX AF,AF
+            {
+            uint16_t nreg_af = flags_load_byte(&cpu->flags);
+            nreg_af |= ((uint16_t)cpu->reg_A) << 8;
+            nreg_af = ~nreg_af;
+
+            uint8_t reg_F = nreg_af;
+            flags_sta_byte(&cpu->flags, reg_F);
+            cpu->reg_A = nreg_af >> 8;
+            break;
+            }
         case 0x09: //ADD HL, BC
             {
             cpu->flags.n = 0;
             uint16_t word1 = read_reg_HL(cpu);
             uint16_t word2 = read_reg_BC(cpu);
             flags_test_C16(&cpu->flags, (uint32_t) word1 + word2);
+            flags_test_H16(&cpu->flags, word1, word2, 0);
             word1 += word2;
             write_reg_HL(cpu, word1);
             break;
             }
-        case 0x0a: //LDAX B 
+        case 0x0a: //LD A,(BC)
             {
             uint16_t adr = read_reg_BC(cpu);
             cpu->reg_A = cpu->memory->memory[adr];
             break;
             }
-        case 0x0b: //DCX B 
+        case 0x0b: //DEC BC
             {
             uint16_t word = read_reg_BC(cpu);
             write_reg_BC(cpu, word - 1);
@@ -99,13 +110,20 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x0d: //DEC C 
             instruction_inc_8(cpu, &cpu->reg_C, -1);
             break;
-        case 0x0e: //MVI C, byte 
+        case 0x0e: //LD C,n 
             cpu->reg_C = memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x0f: //RRCA
             instruction_rrc(cpu, &cpu->reg_A);
             break;
-        case 0x11: //LD DE, word 
+        case 0x10: //DJNZ d
+            //Does a relative jump
+            cpu->reg_B --;
+            if(cpu->reg_B != 0){
+                cpu->PC += memory_read8(cpu->memory, ++cpu->PC);
+            }
+            break;
+        case 0x11: //LD DE,nn 
             {
             uint16_t word = cpu_GetLIWord(cpu);
             write_reg_DE(cpu, word);
@@ -117,7 +135,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->memory->memory[adr] = cpu->reg_A;
             break;
             }
-        case 0x13: //INX D 
+        case 0x13: //INC DE
             {
             uint16_t word = read_reg_DE(cpu) + 1;
             write_reg_DE(cpu, word);
@@ -129,11 +147,15 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x15: //DEC D 
             instruction_inc_8(cpu, &cpu->reg_D, -1);
             break;
-        case 0x16: //MVI D, byte 
+        case 0x16: //LD D,n
             cpu->reg_D = memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x17: //RLA
             instruction_rl(cpu, &cpu->reg_A);
+            break;
+        case 0x18: //JR d
+            //Does a relative jump
+            cpu->PC += memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x19: //ADD HL, DE
             {
@@ -141,17 +163,18 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             uint16_t word1 = read_reg_HL(cpu);
             uint16_t word2 = read_reg_DE(cpu);
             flags_test_C16(&cpu->flags, (uint32_t) word1 + word2);
+            flags_test_H16(&cpu->flags, word1, word2, 0);
             word1 += word2;
             write_reg_HL(cpu, word1);
             break;
             }
-        case 0x1a: //LDAX D 
+        case 0x1a: //LD A,(DE)
             {
             uint16_t adr = read_reg_DE(cpu);
             cpu->reg_A = cpu->memory->memory[adr];
             break;
             }
-        case 0x1b: //DCX D 
+        case 0x1b: //DEC DE
             {
             uint16_t word = read_reg_DE(cpu);
             write_reg_DE(cpu, word - 1);
@@ -163,26 +186,32 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x1d: //DEC E 
             instruction_inc_8(cpu, &cpu->reg_E, -1);
             break;
-        case 0x1e: //MVI E, byte 
+        case 0x1e: //LD E,n
             cpu->reg_E = memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x1f: //RRA
             instruction_rr(cpu, &cpu->reg_A);
             break;
-        case 0x21: //LD HL, word 
+        case 0x20: //JR NZ,d
+            //Does a relative jump
+            if(!cpu->flags.z){
+                cpu->PC += memory_read8(cpu->memory, ++cpu->PC);
+            }
+            break;
+        case 0x21: //LD HL,nn 
             {
             uint16_t word = cpu_GetLIWord(cpu);
             write_reg_HL(cpu, word);
             break;
             }
-        case 0x22: //SHLD adr  
+        case 0x22: //LD (nn),HL
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             cpu->memory->memory[adr] = cpu->reg_L;
             cpu->memory->memory[adr+1] = cpu->reg_H;
             break;
             }
-        case 0x23: //INX H 
+        case 0x23: //INC HL
             {
             uint16_t word = read_reg_HL(cpu) + 1;
             write_reg_HL(cpu, word);
@@ -194,7 +223,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x25: //DEC H 
             instruction_inc_8(cpu, &cpu->reg_H, -1);
             break;
-        case 0x26: //MVI H, byte 
+        case 0x26: //MVI H,n 
             cpu->reg_H = memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x27: //DAA 
@@ -217,24 +246,30 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->flags.cy = cy;
             break;
             }
+        case 0x28: //JR Z,d
+            //Does a relative jump
+            if(cpu->flags.z){
+                cpu->PC += memory_read8(cpu->memory, ++cpu->PC);
+            }
+            break;
         case 0x29: //ADD HL, HL
             {
             cpu->flags.n = 0;
-            uint16_t word1 = read_reg_HL(cpu);
-            uint16_t word2 = read_reg_HL(cpu);
-            flags_test_C16(&cpu->flags, (uint32_t) word1 + word2);
-            word1 += word2;
-            write_reg_HL(cpu, word1);
+            uint16_t word = read_reg_HL(cpu);
+            flags_test_C16(&cpu->flags, (uint32_t) word + word);
+            flags_test_H16(&cpu->flags, word, word, 0);
+            word += word;
+            write_reg_HL(cpu, word);
             break;
             }
-        case 0x2a: //LHLD adr 
+        case 0x2a: //LD HL,(nn)
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             cpu->reg_L = cpu->memory->memory[adr];
             cpu->reg_H = cpu->memory->memory[adr+1];
             break;
             }
-        case 0x2b: //DCX H
+        case 0x2b: //DEC HL
             {
             uint16_t word = read_reg_HL(cpu);
             write_reg_HL(cpu, word - 1);
@@ -246,57 +281,71 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x2d: //DEC L
             instruction_inc_8(cpu, &cpu->reg_L, -1);
             break;
-        case 0x2e: //MVI L, byte
+        case 0x2e: //MVI L,n 
             cpu->reg_L = memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x2f: //CPL
             cpu->flags.n = 1;
+            cpu->flags.ac = 1;
             cpu->reg_A = ~cpu->reg_A;
             break;
-        case 0x31: //LD SP, word 
+        case 0x30: //JR NC,d
+            //Does a relative jump
+            if(!cpu->flags.cy){
+                cpu->PC += memory_read8(cpu->memory, ++cpu->PC);
+            }
+            break;
+        case 0x31: //LD SP,nn 
             {
             uint16_t word = cpu_GetLIWord(cpu);
             cpu->SP = word;
             break;
             }
-        case 0x32: //STA adr 
+        case 0x32: //LD (nn),A
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             cpu->memory->memory[adr] = cpu->reg_A;
             break;
             }
-        case 0x33: //INX SP
+        case 0x33: //INC SP
             cpu->SP ++;
             break;
-        case 0x34: //INC M 
+        case 0x34: //INC (HL)
             instruction_inc_8(cpu, &PTR(HL), 1);
             break;
-        case 0x35: //DEC M
+        case 0x35: //DEC (HL)
             instruction_inc_8(cpu, &PTR(HL), -1);
             break;
-        case 0x36: //MVI M,byte
+        case 0x36: //LD (HL),n
             cpu->memory->memory[read_reg_HL(cpu)] = memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x37: //SCF
             cpu->flags.n = 0;
             cpu->flags.cy = 1;
             break;
+        case 0x38: //JR C,d
+            //Does a relative jump
+            if(cpu->flags.cy){
+                cpu->PC += memory_read8(cpu->memory, ++cpu->PC);
+            }
+            break;
         case 0x39: //ADD HL, SP
             {
             cpu->flags.n = 0;
             uint16_t word = read_reg_HL(cpu);
             flags_test_C16(&cpu->flags, (uint32_t) word + cpu->SP);
+            flags_test_H16(&cpu->flags, word, cpu->SP, 0);
             word += cpu->SP;
             write_reg_HL(cpu, word);
             break;
             }
-        case 0x3a: //LDA adr 
+        case 0x3a: //LD A,(nn)
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             cpu->reg_A = cpu->memory->memory[adr];
             break;
             }
-        case 0x3b: //DCX SP 
+        case 0x3b: //DEC SP
             cpu->SP --;
             break;
         case 0x3c: //INC A
@@ -305,200 +354,204 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x3d: //DEC A
             instruction_inc_8(cpu, &cpu->reg_A, -1);
             break;
-        case 0x3e: //MVI A,byte
+        case 0x3e: //LD A,n
             cpu->reg_A = memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x3f: //CCF
             cpu->flags.n = 0;
+            cpu->flags.ac = cpu->flags.cy;
             cpu->flags.cy = ~cpu->flags.cy;
             break;
-        case 0x40: //MOV B,B 
+        case 0x40: //LD B,B 
             cpu->reg_B = cpu->reg_B;
             break;
-        case 0x41: //MOV B,C
+        case 0x41: //LD B,C
             cpu->reg_B = cpu->reg_C;
             break;
-        case 0x42: //MOV B,D 
+        case 0x42: //LD B,D 
             cpu->reg_B = cpu->reg_D;
             break;
-        case 0x43: //MOV B,E 
+        case 0x43: //LD B,E 
             cpu->reg_B = cpu->reg_E;
             break;
-        case 0x44: //MOV B,H 
+        case 0x44: //LD B,H 
             cpu->reg_B = cpu->reg_H;
             break;
-        case 0x45: //MOV B,L 
+        case 0x45: //LD B,L 
             cpu->reg_B = cpu->reg_L;
             break;
-        case 0x46: //MOV B,M 
+        case 0x46: //LD B,(HL)
             cpu->reg_B = PTR(HL);
             break;
-        case 0x47: //MOV B,A 
+        case 0x47: //LD B,A 
             cpu->reg_B = cpu->reg_A;
             break;
-        case 0x48: //MOV C,B 
+        case 0x48: //LD C,B 
             cpu->reg_C = cpu->reg_B;
             break;
-        case 0x49: //MOV C,C 
+        case 0x49: //LD C,C 
             cpu->reg_C = cpu->reg_C;
             break;
-        case 0x4a: //MOV C,D 
+        case 0x4a: //LD C,D 
             cpu->reg_C = cpu->reg_D;
             break;
-        case 0x4b: //MOV C,E 
+        case 0x4b: //LD C,E 
             cpu->reg_C = cpu->reg_E;
             break;
-        case 0x4c: //MOV C,H 
+        case 0x4c: //LD C,H 
             cpu->reg_C = cpu->reg_H;
             break;
-        case 0x4d: //MOV C,L
+        case 0x4d: //LD C,L
             cpu->reg_C = cpu->reg_L;
             break;
-        case 0x4e: //MOV C,M
+        case 0x4e: //LD C,(HL)
             cpu->reg_C = PTR(HL);
             break;
-        case 0x4f: //MOV C,A 
+        case 0x4f: //LD C,A 
             cpu->reg_C = cpu->reg_A;
             break;
-        case 0x50: //MOV D,B 
+        case 0x50: //LD D,B 
             cpu->reg_D = cpu->reg_B;
             break;
-        case 0x51: //MOV D,C 
+        case 0x51: //LD D,C 
             cpu->reg_D = cpu->reg_C;
             break;
-        case 0x52: //MOV D,D 
+        case 0x52: //LD D,D 
             cpu->reg_D = cpu->reg_D;
             break;
-        case 0x53: //MOV D,E 
+        case 0x53: //LD D,E 
             cpu->reg_D = cpu->reg_E;
             break;
-        case 0x54: //MOV D,H 
+        case 0x54: //LD D,H 
             cpu->reg_D = cpu->reg_H;
             break;
-        case 0x55: //MOV D,L 
+        case 0x55: //LD D,L 
             cpu->reg_D = cpu->reg_L;
             break;
-        case 0x56: //MOV D,M
+        case 0x56: //LD D,(HL)
             cpu->reg_D = PTR(HL);
             break;
-        case 0x57: //MOV D,A 
+        case 0x57: //LD D,A 
             cpu->reg_D = cpu->reg_A;
             break;
-        case 0x58: //MOV E,B 
+        case 0x58: //LD E,B 
             cpu->reg_E = cpu->reg_B;
             break;
-        case 0x59: //MOV E,C 
+        case 0x59: //LD E,C 
             cpu->reg_E = cpu->reg_C;
             break;
-        case 0x5a: //MOV E,D 
+        case 0x5a: //LD E,D 
             cpu->reg_E = cpu->reg_D;
             break;
-        case 0x5b: //MOV E,E 
+        case 0x5b: //LD E,E 
             cpu->reg_E = cpu->reg_E;
             break;
-        case 0x5c: //MOV E,H 
+        case 0x5c: //LD E,H 
             cpu->reg_E = cpu->reg_H;
             break;
-        case 0x5d: //MOV E,L 
+        case 0x5d: //LD E,L 
             cpu->reg_E = cpu->reg_L;
             break;
-        case 0x5e: //MOV E,M 
+        case 0x5e: //LD E,(HL)
             cpu->reg_E = PTR(HL);
             break;
-        case 0x5f: //MOV E,A 
+        case 0x5f: //LD E,A 
             cpu->reg_E = cpu->reg_A;
             break;
-        case 0x60: //MOV H,B 
+        case 0x60: //LD H,B 
             cpu->reg_H = cpu->reg_B;
             break;
-        case 0x61: //MOV H,C
+        case 0x61: //LD H,C
             cpu->reg_H = cpu->reg_C;
             break;
-        case 0x62: //MOV H,D
+        case 0x62: //LD H,D
             cpu->reg_H = cpu->reg_D;
             break;
-        case 0x63: //MOV H,E
+        case 0x63: //LD H,E
             cpu->reg_H = cpu->reg_E;
             break;
-        case 0x64: //MOV H,H
+        case 0x64: //LD H,H
             cpu->reg_H = cpu->reg_H;
             break;
-        case 0x65: //MOV H,L
+        case 0x65: //LD H,L
             cpu->reg_H = cpu->reg_L;
             break;
-        case 0x66: //MOV H,M
+        case 0x66: //LD H,(HL)
             cpu->reg_H = PTR(HL);
             break;
-        case 0x67: //MOV H,A
+        case 0x67: //LD H,A
             cpu->reg_H = cpu->reg_A;
             break;
-        case 0x68: //MOV L,B
+        case 0x68: //LD L,B
             cpu->reg_L = cpu->reg_B;
             break;
-        case 0x69: //MOV L,C 
+        case 0x69: //LD L,C 
             cpu->reg_L = cpu->reg_C;
             break;
-        case 0x6a: //MOV L,D 
+        case 0x6a: //LD L,D 
             cpu->reg_L = cpu->reg_D;
             break;
-        case 0x6b: //MOV L,E 
+        case 0x6b: //LD L,E 
             cpu->reg_L = cpu->reg_E;
             break;
-        case 0x6c: //MOV L,H
+        case 0x6c: //LD L,H
             cpu->reg_L = cpu->reg_H;
             break;
-        case 0x6d: //MOV L,L
+        case 0x6d: //LD L,L
             cpu->reg_L = cpu->reg_L;
             break;
-        case 0x6e: //MOV L,M
+        case 0x6e: //LD L,(HL)
             cpu->reg_L = PTR(HL);
             break;
-        case 0x6f: //MOV L,A
+        case 0x6f: //LD L,A
             cpu->reg_L = cpu->reg_A;
             break;
-        case 0x70: //MOV M,B
+        case 0x70: //LD (HL),B
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_B;
             break;
-        case 0x71: //MOV M,C 
+        case 0x71: //LD (HL),C 
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_C;
             break;
-        case 0x72: //MOV M,D 
+        case 0x72: //LD (HL),D 
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_D;
             break;
-        case 0x73: //MOV M,E
+        case 0x73: //LD (HL),E
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_E;
             break;
-        case 0x74: //MOV M,H
+        case 0x74: //LD (HL),H
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_H;
             break;
-        case 0x75: //MOV M,L 
+        case 0x75: //LD (HL),L 
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_L;
             break;
-        case 0x77: //MOV M,A 
+        case 0x76: //HALT
+            //TODO
+            break;
+        case 0x77: //LD (HL),A 
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_A;
             break;
-        case 0x78: //MOV A,B 
+        case 0x78: //LD A,B 
             cpu->reg_A = cpu->reg_B;
             break;
-        case 0x79: //MOV A,C 
+        case 0x79: //LD A,C 
             cpu->reg_A = cpu->reg_C;
             break;
-        case 0x7a: //MOV A,D 
+        case 0x7a: //LD A,D 
             cpu->reg_A = cpu->reg_D;
             break;
-        case 0x7b: //MOV A,E 
+        case 0x7b: //LD A,E 
             cpu->reg_A = cpu->reg_E;
             break;
-        case 0x7c: //MOV A,H
+        case 0x7c: //LD A,H
             cpu->reg_A = cpu->reg_H;
             break;
-        case 0x7d: //MOV A,L
+        case 0x7d: //LD A,L
             cpu->reg_A = cpu->reg_L;
             break;
-        case 0x7e: //MOV A,M
+        case 0x7e: //LD A,(HL)
             cpu->reg_A = PTR(HL);
             break;
-        case 0x7f: //MOV A,A
+        case 0x7f: //LD A,A
             cpu->reg_A = cpu->reg_A;
             break;
         case 0x80: //ADD A,B
@@ -545,7 +598,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x8d: //ADC A,L
             instruction_adc(cpu, cpu->reg_L);
             break;
-        case 0x8e: //ADC A,M
+        case 0x8e: //ADC A,(HL)
             instruction_adc(cpu, PTR(HL));
             break;
         case 0x8f: //ADC A,A
@@ -569,35 +622,35 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x95: //SUB A,L
             instruction_sub(cpu, cpu->reg_L);
             break;
-        case 0x96: //SUB A,M
+        case 0x96: //SUB A,(HL)
             instruction_sub(cpu, PTR(HL));
             break;
         case 0x97: //SUB A,A
             instruction_sub(cpu, cpu->reg_A);
             break;
         case 0x98: //SBC A,B
-            instruction_sbb(cpu, cpu->reg_B);
+            instruction_sbc(cpu, cpu->reg_B);
             break;
         case 0x99: //SBC A,C
-            instruction_sbb(cpu, cpu->reg_C);
+            instruction_sbc(cpu, cpu->reg_C);
             break;
         case 0x9a: //SBC A,D
-            instruction_sbb(cpu, cpu->reg_D);
+            instruction_sbc(cpu, cpu->reg_D);
             break;
         case 0x9b: //SBC A,E
-            instruction_sbb(cpu, cpu->reg_E);
+            instruction_sbc(cpu, cpu->reg_E);
             break;
         case 0x9c: //SBC A,H
-            instruction_sbb(cpu, cpu->reg_H);
+            instruction_sbc(cpu, cpu->reg_H);
             break;
         case 0x9d: //SBC A,L
-            instruction_sbb(cpu, cpu->reg_L);
+            instruction_sbc(cpu, cpu->reg_L);
             break;
-        case 0x9e: //SBC A,M
-            instruction_sbb(cpu, PTR(HL));
+        case 0x9e: //SBC A,(HL)
+            instruction_sbc(cpu, PTR(HL));
             break;
         case 0x9f: //SBC A,A
-            instruction_sbb(cpu, cpu->reg_A);
+            instruction_sbc(cpu, cpu->reg_A);
             break;
         case 0xa0: //AND B
             instruction_ana(cpu, cpu->reg_B);
@@ -617,7 +670,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0xa5: //AND L
             instruction_ana(cpu, cpu->reg_L);
             break;
-        case 0xa6: //AND M
+        case 0xa6: //AND (HL)
             instruction_ana(cpu, PTR(HL));
             break;
         case 0xa7: //AND A
@@ -641,7 +694,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0xad: //XOR L
             instruction_xra(cpu, cpu->reg_L);
             break;
-        case 0xae: //XOR M
+        case 0xae: //XOR (HL)
             instruction_xra(cpu, PTR(HL));
             break;
         case 0xaf: //XOR A
@@ -665,7 +718,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0xb5: //ORA L
             instruction_ora(cpu, cpu->reg_L);
             break;
-        case 0xb6: //ORA M
+        case 0xb6: //ORA (HL)
             instruction_ora(cpu, PTR(HL));
             break;
         case 0xb7: //ORA A
@@ -689,24 +742,24 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0xbd: //CMP L
             instruction_cmp(cpu, cpu->reg_L);
             break;
-        case 0xbe: //CMP M
+        case 0xbe: //CMP (HL)
             instruction_cmp(cpu, PTR(HL));
             break;
         case 0xbf: //CMP A
             instruction_cmp(cpu, cpu->reg_A);
             break;
-        case 0xc0: //RNZ
+        case 0xc0: //RET NZ
             if(!cpu->flags.z){
                 cpu->PC = stack_pop16(cpu) -1;
             }
             break;
-        case 0xc1: //POP B
+        case 0xc1: //POP BC
             {
             uint16_t word = stack_pop16(cpu);
             write_reg_BC(cpu, word);
             break;
             }
-        case 0xc2: //JNZ adr
+        case 0xc2: //JP NZ,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(!cpu->flags.z){
@@ -714,13 +767,13 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xc3: //JMP adr
+        case 0xc3: //JP nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             cpu->PC = adr -1;
             break;
             }
-        case 0xc4: //CNZ adr
+        case 0xc4: //CALL NZ,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(!cpu->flags.z){
@@ -729,23 +782,23 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xc5: //PUSH B
+        case 0xc5: //PUSH BC
             {
             uint16_t word = read_reg_BC(cpu);
             stack_push16(cpu, word);
             break;
             }
-        case 0xc6: //ADI byte 
+        case 0xc6: //ADD A,n
             {
             uint8_t operand = memory_read8(cpu->memory, ++cpu->PC);
             instruction_add(cpu, operand);
             break;
             }
-        case 0xc7: //RST 0
+        case 0xc7: //RST 00H
             stack_push16(cpu, cpu->PC+1);
             cpu->PC = (INTERRUPT_VECTOR_SIZE * 0) - 1;
             break;
-        case 0xc8: //RZ
+        case 0xc8: //RET Z
             if(cpu->flags.z){
                 cpu->PC = stack_pop16(cpu) -1;
             }
@@ -753,7 +806,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0xc9: //RET
             cpu->PC = stack_pop16(cpu) -1;
             break;
-        case 0xca: //JZ adr
+        case 0xca: //JP Z,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(cpu->flags.z){
@@ -767,7 +820,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu_bit_instructions(cpu, &opcode);
             break;
             }
-        case 0xcc: //CZ
+        case 0xcc: //CALL Z,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(cpu->flags.z){
@@ -776,8 +829,9 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xcd: //CALL adr
+        case 0xcd: //CALL nn
             {
+            //TODO: Fix
             uint16_t adr = cpu_GetLIWord(cpu);
             if(adr == 0x0000){
                 printf("end of test\n");
@@ -808,28 +862,28 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xce: //ACI byte
+        case 0xce: //ADC A,n
             {
             uint8_t operand = memory_read8(cpu->memory, ++cpu->PC); 
             instruction_adc(cpu, operand);
             break;
             }
-        case 0xcf: //RST 1
+        case 0xcf: //RST 08H
             stack_push16(cpu, cpu->PC+1);
             cpu->PC = (INTERRUPT_VECTOR_SIZE * 1) - 1;
             break;
-        case 0xd0: //RNC
+        case 0xd0: //RET NC
             if(!cpu->flags.cy){
                 cpu->PC = stack_pop16(cpu) -1;
             }
             break;
-        case 0xd1: //POP D
+        case 0xd1: //POP DE
             {
             uint16_t word = stack_pop16(cpu);
             write_reg_DE(cpu, word);
             break;
             }
-        case 0xd2: //JNC adr
+        case 0xd2: //JPC NC,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(!cpu->flags.cy){
@@ -837,7 +891,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xd3: //OUT byte 
+        case 0xd3: //OUT (n),A
             {
             //duplicated byte on address bus
             uint16_t adr = (uint16_t) memory_read8(cpu->memory, ++cpu->PC);
@@ -850,7 +904,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->RD_pin = 1;    //active low
             break;
             }
-        case 0xd4: //CNC adr
+        case 0xd4: //CALL NC,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(!cpu->flags.cy){
@@ -859,25 +913,30 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xd5: //PUSH D
+        case 0xd5: //PUSH DE
             stack_push16(cpu, read_reg_DE(cpu));
             break;
-        case 0xd6: //SUI byte 
+        case 0xd6: //SUB n
             {
             uint8_t operand = memory_read8(cpu->memory, ++cpu->PC); 
             instruction_sub(cpu, operand);
             break;
             }
-        case 0xd7: //RST 2;
+        case 0xd7: //RST 10H;
             stack_push16(cpu, cpu->PC+1);
             cpu->PC = (INTERRUPT_VECTOR_SIZE * 2) - 1;
             break;
-        case 0xd8: //RC
+        case 0xd8: //RET C
             if(cpu->flags.cy){
                 cpu->PC = stack_pop16(cpu) -1;
             }
             break;
-        case 0xda: //JC adr
+        case 0xd9: //EXX
+            write_reg_BC(cpu, ~(read_reg_BC(cpu)));
+            write_reg_DE(cpu, ~(read_reg_DE(cpu)));
+            write_reg_HL(cpu, ~(read_reg_HL(cpu)));
+            break;
+        case 0xda: //JP C,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(cpu->flags.cy){
@@ -885,7 +944,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xdb: //IN byte
+        case 0xdb: //IN A,(n)
             {
             uint16_t adr = (uint16_t) memory_read8(cpu->memory, ++cpu->PC);
             adr |= adr << 8;
@@ -895,7 +954,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->RD_pin = 0;    //active low
             break;
             }
-        case 0xdc: //CC adr
+        case 0xdc: //CALL C,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(cpu->flags.cy){
@@ -907,31 +966,31 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0xdd: //PREFIX: IX INSTRUCTIONS
             {
             uint8_t opcode = memory_read8(cpu->memory, ++cpu->PC);
-            cpu_IX_instructions(cpu, &opcode);
+            //cpu_IX_instructions(cpu, &opcode);
             break;
             }
-        case 0xde: //SBI byte 
+        case 0xde: //SBC A,n
             {
             uint8_t operand = memory_read8(cpu->memory, ++cpu->PC); 
-            instruction_sbb(cpu, operand);
+            instruction_sbc(cpu, operand);
             break;
             }
-        case 0xdf: //RST 3;
+        case 0xdf: //RST 18H;
             stack_push16(cpu, cpu->PC+1);
             cpu->PC = (INTERRUPT_VECTOR_SIZE * 3) - 1;
             break;
-        case 0xe0: //RPO
+        case 0xe0: //RET PO
             if(!cpu->flags.p){
                 cpu->PC = stack_pop16(cpu) -1;
             }
             break;
-        case 0xe1: //POP H
+        case 0xe1: //POP HL
             {
             uint16_t word = stack_pop16(cpu);
             write_reg_HL(cpu, word);
             break;
             }
-        case 0xe2: //JPO adr
+        case 0xe2: //JP PO nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(!cpu->flags.p){
@@ -939,14 +998,14 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xe3: //XTHL 
+        case 0xe3: //EX (SP),HL
             {
             uint16_t word = stack_pop16(cpu);
             stack_push16(cpu, read_reg_HL(cpu));
             write_reg_HL(cpu, word);
             break;
             }
-        case 0xe4: //CPO adr
+        case 0xe4: //CALL PO,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(!cpu->flags.p){
@@ -955,31 +1014,31 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xe5: //PUSH H
+        case 0xe5: //PUSH HL
             stack_push16(cpu, read_reg_HL(cpu));
             break;
-        case 0xe6: //ANI byte 
+        case 0xe6: //AND n
             {
             uint8_t operand = memory_read8(cpu->memory, ++cpu->PC); 
             instruction_ana(cpu, operand);
             break;
             }
-        case 0xe7: //RST 4;
+        case 0xe7: //RST 20H;
             stack_push16(cpu, cpu->PC+1);
             cpu->PC = (INTERRUPT_VECTOR_SIZE * 4) - 1;
             break;
-        case 0xe8: //RPE
+        case 0xe8: //RET PE
             if(cpu->flags.p){
                 cpu->PC = stack_pop16(cpu) -1;
             }
             break;
-        case 0xe9: //PCHL
+        case 0xe9: //JP (HL)
             {
             uint16_t word = read_reg_HL(cpu);
             cpu->PC = word -1;
             break;
             }
-        case 0xea: //JPE adr
+        case 0xea: //JP PE,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(cpu->flags.p){
@@ -987,14 +1046,14 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xeb: //XCHG
+        case 0xeb: //EX DE,HL
             {
             uint16_t temp = read_reg_HL(cpu);
             write_reg_HL(cpu, read_reg_DE(cpu));
             write_reg_DE(cpu, temp);
             break;
             }
-        case 0xec: //CPE adr
+        case 0xec: //CALL PE,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(cpu->flags.p){
@@ -1003,29 +1062,29 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xee: //XRI byte 
+        case 0xee: //XOR n
             {
             uint8_t operand = memory_read8(cpu->memory, ++cpu->PC); 
             instruction_xra(cpu, operand);
             break;
             }
-        case 0xef: //RST 5;
+        case 0xef: //RST 28H
             stack_push16(cpu, cpu->PC+1);
             cpu->PC = (INTERRUPT_VECTOR_SIZE * 5) - 1;
             break;
-        case 0xf0: //RP
+        case 0xf0: //RET P
             if(!cpu->flags.s){
                 cpu->PC = stack_pop16(cpu) -1;
             }
             break;
-        case 0xf1: //POP PSW
+        case 0xf1: //POP AF
             {
             uint8_t flags_reg = stack_pop8(cpu);
             flags_sta_byte(&cpu->flags, flags_reg);
             cpu->reg_A = stack_pop8(cpu);
             break;
             }
-        case 0xf2: //JP
+        case 0xf2: //JP P,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(!cpu->flags.s){
@@ -1036,7 +1095,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0xf3: //DI
             cpu->interrupt_enable = 0;
             break;
-        case 0xf4: //CP adr
+        case 0xf4: //CALL P,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(!cpu->flags.s){
@@ -1045,35 +1104,35 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xf5: //PUSH PSW
+        case 0xf5: //PUSH AF
             {
             uint8_t flags_reg = flags_load_byte(&cpu->flags);
             stack_push8(cpu, cpu->reg_A);
             stack_push8(cpu, flags_reg);
             break;
             }
-        case 0xf6: //ORI byte 
+        case 0xf6: //OR n
             {
             uint8_t operand = memory_read8(cpu->memory, ++cpu->PC); 
             instruction_ora(cpu, operand);
             break;
             }
-        case 0xf7: //RST 6
+        case 0xf7: //RST 30H
             stack_push16(cpu, cpu->PC+1);
             cpu->PC = (INTERRUPT_VECTOR_SIZE * 6) - 1;
             break;
-        case 0xf8: //RM
+        case 0xf8: //RET M
             if(cpu->flags.s){
                 cpu->PC = stack_pop16(cpu) -1;
             }
             break;
-        case 0xf9: //SPHL
+        case 0xf9: //LD SP,HL
             {
             uint16_t word = read_reg_HL(cpu);
             cpu->SP = word;
             break;
             }
-        case 0xfa: //JM adr
+        case 0xfa: //JP M,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(cpu->flags.s){
@@ -1084,7 +1143,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0xfb: //EI
             cpu->interrupt_enable = 1;
             break;
-        case 0xfc: //CM adr
+        case 0xfc: //CALL M,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             if(cpu->flags.s){
@@ -1093,13 +1152,13 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
             break;
             }
-        case 0xfe: //CPI byte 
+        case 0xfe: //CP n
             {
             uint8_t operand = memory_read8(cpu->memory, ++cpu->PC);
             instruction_cmp(cpu, operand);
             break;
             }
-        case 0xff: //RST 7
+        case 0xff: //RST 38H
             stack_push16(cpu, cpu->PC + 1);
             cpu->PC = (INTERRUPT_VECTOR_SIZE * 7) - 1;
             break;

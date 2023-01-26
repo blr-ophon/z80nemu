@@ -32,7 +32,7 @@ void instruction_adc(struct cpu8080 *cpu, uint8_t reg_x);
 
 void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x);
 
-void instruction_sbb(struct cpu8080 *cpu, uint8_t reg_x);
+void instruction_sbc(struct cpu8080 *cpu, uint8_t reg_x);
 
 void instruction_ana(struct cpu8080 *cpu, uint8_t reg_x);
 

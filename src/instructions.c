@@ -203,6 +203,7 @@ void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x){
 
 void instruction_add(struct cpu8080 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + reg_x;
+    flags_test_V(&cpu->flags, cpu->reg_A, reg_x);
     flags_test_H(&cpu->flags, cpu->reg_A, reg_x, 0);
     flags_test_C8(&cpu->flags, result);
 
@@ -213,6 +214,8 @@ void instruction_add(struct cpu8080 *cpu, uint8_t reg_x){
 
 void instruction_adc(struct cpu8080 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + reg_x + cpu->flags.cy;
+    //NOTE: if this doesnt pass tests, try adding the carry to cpu->reg_A instead
+    flags_test_V(&cpu->flags, cpu->reg_A, reg_x + cpu->flags.cy);
     flags_test_H(&cpu->flags, cpu->reg_A, reg_x, cpu->flags.cy);
     flags_test_C8(&cpu->flags, result);
 
@@ -229,14 +232,16 @@ void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x){
         cpu->flags.cy = 1;
     }
 
+    flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x) + 1);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, 1);
     flags_test_ZS(&cpu->flags, result);
+
     cpu->reg_A = result;
     cpu->flags.cy = ~(cpu->flags.cy) & 0x01;
     cpu->flags.n = 1;
 }
 
-void instruction_sbb(struct cpu8080 *cpu, uint8_t reg_x){
+void instruction_sbc(struct cpu8080 *cpu, uint8_t reg_x){
     uint8_t borrow = ~(cpu->flags.cy) & 0x01;
     uint16_t result = cpu->reg_A + ~reg_x + borrow;
 
@@ -245,8 +250,11 @@ void instruction_sbb(struct cpu8080 *cpu, uint8_t reg_x){
         cpu->flags.cy = 1;
     }
 
+    //NOTE: if this doesnt pass tests, try adding the borrow to cpu->reg_A instead
+    flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x) + borrow);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, borrow);
     flags_test_ZS(&cpu->flags, result);
+
     cpu->reg_A = result;
     cpu->flags.cy = ~cpu->flags.cy & 0x01;
     cpu->flags.n = 1;
@@ -259,6 +267,7 @@ void instruction_cmp(struct cpu8080 *cpu, uint8_t reg_x){
     if(~(cpu->reg_A ^ result ^ reg_x) & 0x10){
         cpu->flags.ac = 1;
     }
+    flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x)+1);
     flags_test_ZS(&cpu->flags, (uint8_t) result);
     cpu->flags.n = 1;
 }
@@ -272,6 +281,7 @@ void instruction_ana(struct cpu8080 *cpu, uint8_t reg_x){
         cpu->flags.ac = 1;
     }
     flags_test_ZS(&cpu->flags, result);
+    flags_test_P(&cpu->flags, result);
     cpu->reg_A = result;
 }
 
@@ -281,6 +291,7 @@ void instruction_xra(struct cpu8080 *cpu, uint8_t reg_x){
     cpu->flags.cy = 0;
     cpu->flags.n = 0;
     flags_test_ZS(&cpu->flags, cpu->reg_A);
+    flags_test_P(&cpu->flags, cpu->reg_A);
 }
 
 void instruction_ora(struct cpu8080 *cpu, uint8_t reg_x){
@@ -289,6 +300,7 @@ void instruction_ora(struct cpu8080 *cpu, uint8_t reg_x){
     cpu->flags.cy = 0;
     cpu->flags.n = 0;
     flags_test_ZS(&cpu->flags, cpu->reg_A);
+    flags_test_P(&cpu->flags, cpu->reg_A);
 }
 
 
