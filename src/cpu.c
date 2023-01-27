@@ -1,4 +1,11 @@
 #include "cpu.h"
+//TODO: CPU speed
+//TODO modularize this code into cpuIXIY cpubit and such
+//to make debug easier
+//TODO: proper PC increment: save a copy of (pc), increment pc
+//and execute the copy. this simulates the pc being saved in instruction
+//register before being incremented. This should be done last, as it breaks
+//byte fetchs, pushs, jumps, calls, in, out etc
 
 static void unimplemented_opcode(Cpu8080 *cpu, uint8_t *opcode){
     fprintf(stderr, "Unimplemented Opcode: %02X\n", *opcode);
@@ -70,7 +77,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0x07: //RLCA
             instruction_rlc(cpu, &cpu->reg_A);
             break;
-        case 0x08: //EX AF,AF
+        case 0x08: //EX AF,AF'
             {
             uint16_t nreg_af = flags_load_byte(&cpu->flags);
             nreg_af |= ((uint16_t)cpu->reg_A) << 8;
@@ -1419,52 +1426,13 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
 
 void instruction_IXIY_add(Flags *flags, uint16_t *ix_or_iy, uint16_t reg_pair){
     //TODO: Check PC increment in all prefix instructions
+    //TODO: Fix this instruction and send it to instructions.c
     uint32_t result = *ix_or_iy + reg_pair;
     flags->cy = result & 0x10000? 1: 0;
     flags->n = 0;
     flags_test_H16(flags, *ix_or_iy, reg_pair, 0);
     *ix_or_iy = result; 
 }
-
-void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t opcode, bool iy_mode){
-    uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
-    uint16_t adr = (*ix_or_iy) + memory_read8(cpu->memory, ++cpu->PC);
-    switch(opcode){
-        case 0x06: //RLC (IX/Y+d)
-            instruction_rlc(cpu, &cpu->memory->memory[adr]);
-            break;
-        case 0x0e: //RRC (IX/Y+d)
-            instruction_rrc(cpu, &cpu->memory->memory[adr]);
-            break;
-        case 0x16: //RL (IX/Y+d)
-            instruction_rl(cpu, &cpu->memory->memory[adr]);
-            break;
-        case 0x1e: //RR (IX/Y+d)
-            instruction_rr(cpu, &cpu->memory->memory[adr]);
-            break;
-        case 0x26: //SLA (IX/Y+d)
-            instruction_sla(cpu, &cpu->memory->memory[adr]);
-            break;
-        case 0x2e: //SRA (IX/Y+d)
-            instruction_sra(cpu, &cpu->memory->memory[adr]);
-            break;
-        case 0x3e: //SRL (IX/Y+d)
-            instruction_srl(cpu, &cpu->memory->memory[adr]);
-            break;
-        case 0x40 ... 0x7f: //BIT x,(IX/Y + d)
-            instruction_bit_IXIY(cpu, opcode, (*ix_or_iy));
-            break;
-        case 0x80 ... 0xbf: //RES x,(IX/Y + d)
-            instruction_res_set_IXIY(cpu, opcode, 0, adr);
-            break;
-        case 0xc0 ... 0xff: //RES x,(IX/Y + d)
-            instruction_res_set_IXIY(cpu, opcode, 1, adr);
-            break;
-    }
-}
-
-
-
 
 void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
     uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
@@ -1523,7 +1491,6 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
         case 0x40 ... 0x7f: //LD reg1,reg2 
             instruction_ld_IXIY(cpu, *opcode, iy_mode);
             break;
-
         case 0x86: //ADD A,(IX/Y+d)
             {
             uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
@@ -1590,3 +1557,203 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
     }
 }
 
+void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t opcode, bool iy_mode){
+    uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
+    uint16_t adr = (*ix_or_iy) + memory_read8(cpu->memory, ++cpu->PC);
+    switch(opcode){
+        case 0x06: //RLC (IX/Y+d)
+            instruction_rlc(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x0e: //RRC (IX/Y+d)
+            instruction_rrc(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x16: //RL (IX/Y+d)
+            instruction_rl(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x1e: //RR (IX/Y+d)
+            instruction_rr(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x26: //SLA (IX/Y+d)
+            instruction_sla(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x2e: //SRA (IX/Y+d)
+            instruction_sra(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x3e: //SRL (IX/Y+d)
+            instruction_srl(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x40 ... 0x7f: //BIT x,(IX/Y + d)
+            instruction_bit_IXIY(cpu, opcode, (*ix_or_iy));
+            break;
+        case 0x80 ... 0xbf: //RES x,(IX/Y + d)
+            instruction_res_set_IXIY(cpu, opcode, 0, adr);
+            break;
+        case 0xc0 ... 0xff: //RES x,(IX/Y + d)
+            instruction_res_set_IXIY(cpu, opcode, 1, adr);
+            break;
+    }
+}
+
+void io_routines_IN(Cpu8080 *cpu, uint8_t *reg_x){
+    //Instruction is executed in two parts. 
+    //
+    //In the first oneit sends the address to address bus and sets proper 
+    //pins, then breaks opcode execution so that a machine specific function
+    //can do whatever it wants with this information, such as strobing or,
+    //what is more common, set a byte in address bus to be read.
+    //
+    //In the second one, it resets the proper pins and read whatever
+    //is in data bus to an specified register, setting the flags accordingly.
+    //
+    //
+    //FIRST PART OF INSTRUCTION
+    if(cpu->IORQ_pin){ //active low
+        cpu->IORQ_pin = 0;
+        cpu->MREQ_pin = 1;
+        cpu->RD_pin = 0;
+        cpu->WR_pin = 1;
+        cpu->address_bus = read_reg_BC(cpu);
+        cpu->PC -= 2; //TODO: check/test
+        return;
+        //this function will be called again for the second part as long as 
+        //nothing changes PC. TODO: Protect this routine against interrupts 
+        //and DMAs. If an interrupt changes PC in the middle of an instruction,
+        //this can break the emulation because of the pins. The emulation will
+        //fetch instruction again for IN instructions, but the actual hardware
+        //only fetches IN one time, so the second time does not count as an 
+        //actual fetch to allow DMA and interrupts.
+    } 
+
+    //SECOND PART OF INSTRUCTION
+    cpu->IORQ_pin = 1;
+    cpu->MREQ_pin = 0;
+    cpu->RD_pin = 0;
+    cpu->WR_pin = 1;
+    *reg_x = cpu->data_bus;
+    cpu->flags.n = 0;
+    cpu->flags.h = 0;
+}
+
+void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
+    switch(opcode){
+        case 0x40: //IN B,(c)
+            io_routines_IN(cpu, &cpu->reg_B);
+            break;
+        case 0x41: //OUT (c),B
+            break;
+        case 0x42: //SBC HL,BC
+            break;
+        case 0x43: //LD (nn),BC
+            break;
+        case 0x44: //NEG
+            break;
+        case 0x45: //RETN
+            break;
+        case 0x46: //IM 0
+            break;
+        case 0x47: //LD I,A
+            break;
+        case 0x48: //IN C,(C)
+            io_routines_IN(cpu, &cpu->reg_C);
+            break;
+        case 0x49: //OUT (C),C
+            break;
+        case 0x4a: //ADC HL,BC
+            break;
+        case 0x4b: //LD BC,(nn)
+            break;
+        case 0x4d: //RETI
+            break;
+        case 0x4f: //LD R,A
+            break;
+        case 0x50: //IN D,(c)
+            io_routines_IN(cpu, &cpu->reg_D);
+            break;
+        case 0x51: //OUT (c),D
+            break;
+        case 0x52: //SBC HL,DE
+            break;
+        case 0x53: //LD (nn),DE
+            break;
+        case 0x56: //IM 1
+            break;
+        case 0x57: //LD A,I
+            break;
+        case 0x58: //IN E,(C)
+            io_routines_IN(cpu, &cpu->reg_E);
+            break;
+        case 0x59: //OUT (C),E
+            break;
+        case 0x5a: //ADC HL,DE
+            break;
+        case 0x5b: //LD DE,(nn)
+            break;
+        case 0x5e: //IM 2
+            break;
+        case 0x5f: //LD A,R
+            break;
+        case 0x60: //IN H,(c)
+            io_routines_IN(cpu, &cpu->reg_H);
+            break;
+        case 0x61: //OUT (c),H
+            break;
+        case 0x62: //SBC HL,HL
+            break;
+        case 0x67: //RRD
+            break;
+        case 0x68: //IN L,(c)
+            io_routines_IN(cpu, &cpu->reg_L);
+            break;
+        case 0x69: //OUT (c),L
+            break;
+        case 0x6a: //ADC HL,HL
+            break;
+        case 0x6f: //RLD
+            break;
+        case 0x72: //SBC HL,SP
+            break;
+        case 0x73: //LD (nn),SP
+            break;
+        case 0x78: //IN A,(c)
+            io_routines_IN(cpu, &cpu->reg_A);
+            break;
+        case 0x79: //OUT (c),A
+            break;
+        case 0x7a: //ADC HL,SP
+            break;
+        case 0x7b: //LD SP,(nn)
+            break;
+        case 0xa0: //LDI
+            break;
+        case 0xa1: //CPI
+            break;
+        case 0xa2: //INI
+            break;
+        case 0xa3: //OUTI
+            break;
+        case 0xa8: //LDD
+            break;
+        case 0xa9: //CPD
+            break;
+        case 0xaa: //IND
+            break;
+        case 0xab: //OUTD
+            break;
+        case 0xb0: //LDIR
+            break;
+        case 0xb1: //CPIR
+            break;
+        case 0xb2: //INIR
+            break;
+        case 0xb3: //OTIR 
+            break;
+        case 0xb8: //LDDR
+            break;
+        case 0xb9: //CPDR
+            break;
+        case 0xba: //INDR
+            break;
+        case 0xbb: //OTDR
+            break;
+    }
+}
