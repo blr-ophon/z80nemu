@@ -232,7 +232,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             uint8_t correction = 0;
 
             uint8_t ls_nibble = cpu->reg_A & 0x0f;
-            if((ls_nibble > 0x09) || cpu->flags.ac){
+            if((ls_nibble > 0x09) || cpu->flags.h){
                 correction += 0x06;
             }
 
@@ -286,7 +286,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
         case 0x2f: //CPL
             cpu->flags.n = 1;
-            cpu->flags.ac = 1;
+            cpu->flags.h = 1;
             cpu->reg_A = ~cpu->reg_A;
             break;
         case 0x30: //JR NC,d
@@ -359,7 +359,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
         case 0x3f: //CCF
             cpu->flags.n = 0;
-            cpu->flags.ac = cpu->flags.cy;
+            cpu->flags.h = cpu->flags.cy;
             cpu->flags.cy = ~cpu->flags.cy;
             break;
         case 0x40: //LD B,B 
@@ -967,7 +967,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
         case 0xdd: //PREFIX: IX INSTRUCTIONS
             {
             uint8_t opcode = memory_read8(cpu->memory, ++cpu->PC);
-            cpu_IXY_instructions(cpu, &opcode, 0);
+            cpu_IXIY_instructions(cpu, &opcode, 0);
             break;
             }
         case 0xde: //SBC A,n
@@ -1417,7 +1417,8 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
     }
 }
 
-void instruction_DDED_add(Flags *flags, uint16_t *ix_or_iy, uint16_t reg_pair){
+void instruction_IXIY_add(Flags *flags, uint16_t *ix_or_iy, uint16_t reg_pair){
+    //TODO: Check PC increment in all prefix instructions
     uint32_t result = *ix_or_iy + reg_pair;
     flags->cy = result & 0x10000? 1: 0;
     flags->n = 0;
@@ -1425,62 +1426,101 @@ void instruction_DDED_add(Flags *flags, uint16_t *ix_or_iy, uint16_t reg_pair){
     *ix_or_iy = result; 
 }
 
+void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t opcode, bool iy_mode){
+    uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
+    uint16_t adr = (*ix_or_iy) + memory_read8(cpu->memory, ++cpu->PC);
+    switch(opcode){
+        case 0x06: //RLC (IX/Y+d)
+            instruction_rlc(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x0e: //RRC (IX/Y+d)
+            instruction_rrc(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x16: //RL (IX/Y+d)
+            instruction_rl(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x1e: //RR (IX/Y+d)
+            instruction_rr(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x26: //SLA (IX/Y+d)
+            instruction_sla(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x2e: //SRA (IX/Y+d)
+            instruction_sra(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x3e: //SRL (IX/Y+d)
+            instruction_srl(cpu, &cpu->memory->memory[adr]);
+            break;
+        case 0x40 ... 0x7f: //BIT x,(IX/Y + d)
+            instruction_bit_IXIY(cpu, opcode, (*ix_or_iy));
+            break;
+        case 0x80 ... 0xbf: //RES x,(IX/Y + d)
+            instruction_res_set_IXIY(cpu, opcode, 0, adr);
+            break;
+        case 0xc0 ... 0xff: //RES x,(IX/Y + d)
+            instruction_res_set_IXIY(cpu, opcode, 1, adr);
+            break;
+    }
+}
 
-void cpu_IXY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
+
+
+
+void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
     uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
     switch(*opcode){
-        case 0x09: //ADD IX,BC
-            instruction_DDED_add(&cpu->flags, ix_or_iy, read_reg_BC(cpu));
+        case 0x09: //ADD IX/Y,BC
+            instruction_IXIY_add(&cpu->flags, ix_or_iy, read_reg_BC(cpu));
             break;
-        case 0x19: //ADD IX,DE
-            instruction_DDED_add(&cpu->flags, ix_or_iy, read_reg_DE(cpu));
+        case 0x19: //ADD IX/Y,DE
+            instruction_IXIY_add(&cpu->flags, ix_or_iy, read_reg_DE(cpu));
             break;
-        case 0x21: //LD IX,nn
+        case 0x21: //LD IX/Y,nn
             *ix_or_iy = cpu_GetLIWord(cpu);
             break;
-        case 0x22: //LD (nn),IX
+        case 0x22: //LD (nn),IX/Y
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             cpu->memory->memory[adr] = *ix_or_iy;
             break;
             }
-        case 0x23: //INC IX
+        case 0x23: //INC IX/Y
             (*ix_or_iy) ++;
             break;
-        case 0x29: //ADD IX,IX
-            instruction_DDED_add(&cpu->flags, ix_or_iy, *ix_or_iy);
+        case 0x29: //ADD IX/Y,IX/Y
+            instruction_IXIY_add(&cpu->flags, ix_or_iy, *ix_or_iy);
             break;
-        case 0x2a: //LD IX,(nn)
+        case 0x2a: //LD IX/Y,(nn)
             {
             uint16_t adr = cpu_GetLIWord(cpu);
             *ix_or_iy = cpu->memory->memory[adr];
             break;
             }
-        case 0x2b: //DEC IX
+        case 0x2b: //DEC IX/Y
             (*ix_or_iy) --;
             break;
-        case 0x34: //INC (IX+d)
+        case 0x34: //INC (IX/Y+d)
             {
             uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
             cpu->memory->memory[adr] ++;
             break;
             }
-        case 0x35: //DEC (IX+d)
+        case 0x35: //DEC (IX/Y+d)
             {
             uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
             cpu->memory->memory[adr] --;
             break;
             }
-        case 0x36: //LD (IX+d),n
+        case 0x36: //LD (IX/Y+d),n
             {
             uint16_t adr = *ix_or_iy + memory_read8(cpu->memory, ++cpu->PC);
             cpu->memory->memory[adr] = memory_read8(cpu->memory, ++cpu->PC);
             break;
             }
-        case 0x39: //ADD IX,SP
-            instruction_DDED_add(&cpu->flags, ix_or_iy, cpu->SP);
+        case 0x39: //ADD IX/Y,SP
+            instruction_IXIY_add(&cpu->flags, ix_or_iy, cpu->SP);
             break;
-        case 0x40 ... 0x79: //LD reg1,reg2 
+        case 0x40 ... 0x7f: //LD reg1,reg2 
             instruction_ld_IXIY(cpu, *opcode, iy_mode);
             break;
 
@@ -1541,10 +1581,10 @@ void cpu_IXY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
         case 0xe5: //PUSH IX/Y
             stack_push16(cpu, (*ix_or_iy));
             break;
-        case 0xe9: //JP (IX)
+        case 0xe9: //JP (IX/Y)
             cpu->PC = (*ix_or_iy) - 1;
             break;
-        case 0xf9: //LD SP,IX
+        case 0xf9: //LD SP,IX/Y
             cpu->SP = (*ix_or_iy);
             break;
     }

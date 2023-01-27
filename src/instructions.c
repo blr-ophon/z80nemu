@@ -1,5 +1,40 @@
 #include <assert.h>
 #include "cpu.h"
+//TODO: fix function head parameter names. reg_x is confusing now
+
+void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_state, uint16_t adr){
+    //instruction format: 00bbbrrr, to set/reset bit b of register r 
+    uint8_t bit_pos = (opcode & 0x38) >> 3; 
+    if(bit_state){
+        cpu->memory->memory[adr] |= (uint8_t) bit_state << bit_pos;
+    }else{
+        cpu->memory->memory[adr] &= ~((uint8_t) bit_state << bit_pos);
+    }
+
+    uint8_t reg = opcode & 0x07; 
+    uint8_t *regsPtrs[] = {
+        &cpu->reg_B,
+        &cpu->reg_C,
+        &cpu->reg_D,
+        &cpu->reg_E,
+        &cpu->reg_H,
+        &cpu->reg_L,
+        &cpu->memory->memory[adr],
+        &cpu->reg_A
+    };
+    *(regsPtrs[reg]) = cpu->memory->memory[adr]; 
+}
+
+void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, uint8_t reg_x){
+    //instruction format: 00bbbrrr, to test bit b of register r. In this case,
+    //r is always (IX/Y + d), given in reg_x 
+    uint8_t bit_pos = (opcode & 0x38) >> 3; 
+    if((reg_x >> bit_pos) & 0x01){
+        cpu->flags.z = 0;
+    } else cpu->flags.z = 1;
+    cpu->flags.n = 0;
+    cpu->flags.h = 1;
+}
 
 void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
     //instruction format: 01RRRrrr, store contents of r to R 
@@ -153,7 +188,7 @@ void instruction_bit(struct cpu8080 *cpu, uint8_t opcode){
         cpu->flags.z = 0;
     } else cpu->flags.z = 1;
     cpu->flags.n = 0;
-    cpu->flags.ac = 1;
+    cpu->flags.h = 1;
 }
 
 void instruction_sla(struct cpu8080 *cpu, uint8_t *reg_x){
@@ -166,7 +201,7 @@ void instruction_sla(struct cpu8080 *cpu, uint8_t *reg_x){
         cpu->flags.cy = 0;
     }
     cpu->flags.n = 0;
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
     flags_test_ZS(&cpu->flags, *reg_x);
 }
 
@@ -182,7 +217,7 @@ void instruction_sra(struct cpu8080 *cpu, uint8_t *reg_x){
         cpu->flags.cy = 0;
     }
     cpu->flags.n = 0;
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
     flags_test_ZS(&cpu->flags, temp);
     *reg_x = temp;
 }
@@ -198,7 +233,7 @@ void instruction_srl(struct cpu8080 *cpu, uint8_t *reg_x){
         cpu->flags.cy = 0;
     }
     cpu->flags.n = 0;
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
     flags_test_ZS(&cpu->flags, *reg_x);
 }
 
@@ -218,7 +253,7 @@ void instruction_rl(struct cpu8080 *cpu, uint8_t *reg_x){
     }
     cpu->flags.n = 0;
     //NOTE: this flag is unaffected in 8080
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
 }
 
 void instruction_rr(struct cpu8080 *cpu, uint8_t *reg_x){
@@ -237,7 +272,7 @@ void instruction_rr(struct cpu8080 *cpu, uint8_t *reg_x){
     }
     cpu->flags.n = 0;
     //NOTE: this flag is unaffected in 8080
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
 }
 
 void instruction_rlc(struct cpu8080 *cpu, uint8_t *reg_x){
@@ -252,7 +287,7 @@ void instruction_rlc(struct cpu8080 *cpu, uint8_t *reg_x){
     }
     cpu->flags.n = 0;
     //NOTE: this flag is unaffected in 8080
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
 }
 
 void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x){
@@ -267,7 +302,7 @@ void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x){
     }
     cpu->flags.n = 0;
     //NOTE: this flag is unaffected in 8080
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
 }
 
 void instruction_add(struct cpu8080 *cpu, uint8_t reg_x){
@@ -332,9 +367,9 @@ void instruction_sbc(struct cpu8080 *cpu, uint8_t reg_x){
 void instruction_cmp(struct cpu8080 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A - reg_x;
     cpu->flags.cy = result >> 8;
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
     if(~(cpu->reg_A ^ result ^ reg_x) & 0x10){
-        cpu->flags.ac = 1;
+        cpu->flags.h = 1;
     }
     flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x)+1);
     flags_test_ZS(&cpu->flags, (uint8_t) result);
@@ -344,10 +379,10 @@ void instruction_cmp(struct cpu8080 *cpu, uint8_t reg_x){
 void instruction_ana(struct cpu8080 *cpu, uint8_t reg_x){
     uint8_t result = cpu->reg_A & reg_x;
     cpu->flags.cy = 0;
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
     cpu->flags.n = 0;
     if(((cpu->reg_A | reg_x) & 0x08) != 0){
-        cpu->flags.ac = 1;
+        cpu->flags.h = 1;
     }
     flags_test_ZS(&cpu->flags, result);
     flags_test_P(&cpu->flags, result);
@@ -356,7 +391,7 @@ void instruction_ana(struct cpu8080 *cpu, uint8_t reg_x){
 
 void instruction_xra(struct cpu8080 *cpu, uint8_t reg_x){
     cpu->reg_A ^= reg_x;
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
     cpu->flags.cy = 0;
     cpu->flags.n = 0;
     flags_test_ZS(&cpu->flags, cpu->reg_A);
@@ -365,7 +400,7 @@ void instruction_xra(struct cpu8080 *cpu, uint8_t reg_x){
 
 void instruction_ora(struct cpu8080 *cpu, uint8_t reg_x){
     cpu->reg_A |= reg_x;
-    cpu->flags.ac = 0;
+    cpu->flags.h = 0;
     cpu->flags.cy = 0;
     cpu->flags.n = 0;
     flags_test_ZS(&cpu->flags, cpu->reg_A);

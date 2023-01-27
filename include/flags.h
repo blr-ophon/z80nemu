@@ -7,7 +7,7 @@ typedef struct flags{
     //TODO: change flag names to the z80 pattern
     uint8_t s:1;  //sign
     uint8_t z:1;  //zero 
-    uint8_t ac:1; //auxiliary carry
+    uint8_t h:1; //auxiliary carry
     uint8_t p:1;  //parity/overflow
     uint8_t n:1;  //add/subtract
     uint8_t cy:1; //carry

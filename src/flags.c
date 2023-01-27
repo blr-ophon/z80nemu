@@ -38,7 +38,7 @@ void flags_test_H(Flags *flags, uint8_t value, uint8_t operand, uint8_t carry){
     uint8_t result = value + operand + carry;
     uint8_t changes = result ^ value ^ operand;
 
-    flags->ac = changes > 0x0f? 1 : 0;
+    flags->h = changes > 0x0f? 1 : 0;
 }
 
 void flags_test_H16(Flags *flags, uint16_t value, uint16_t operand, uint8_t carry){
@@ -50,7 +50,7 @@ void flags_test_H16(Flags *flags, uint16_t value, uint16_t operand, uint8_t carr
     uint16_t result = value + operand + carry;
     uint16_t changes = result ^ value ^ operand;
 
-    flags->ac = changes > 0x0fff? 1 : 0;
+    flags->h = changes > 0x0fff? 1 : 0;
 }
 
 void flags_test_C8(Flags *flags, uint16_t result){
@@ -65,7 +65,7 @@ uint8_t flags_load_byte(Flags *flags){
     uint8_t flags_reg = 0;
     flags_reg |= flags->s << 7;     //10000000
     flags_reg |= flags->z << 6;     //01000000
-    flags_reg |= flags->ac << 4;    //00010000
+    flags_reg |= flags->h << 4;    //00010000
     flags_reg |= flags->p << 2;     //00000100
     flags_reg |= flags->n << 1;     //00000010
     flags_reg |= flags->cy;         //00000001        
@@ -75,7 +75,7 @@ uint8_t flags_load_byte(Flags *flags){
 void flags_sta_byte(Flags *flags, uint8_t flags_reg){
     flags->s = (flags_reg &  0x80) >> 7;
     flags->z = (flags_reg &  0x40) >> 6;
-    flags->ac = (flags_reg & 0x10) >> 4;
+    flags->h = (flags_reg & 0x10) >> 4;
     flags->p = (flags_reg &  0x04) >> 2;
     flags->n = (flags_reg &  0x02) >> 1;
     flags->cy = flags_reg &  0x01;

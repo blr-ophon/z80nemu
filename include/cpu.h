@@ -61,6 +61,6 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode);
 
 void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode);
 
-void cpu_IXY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode);
+void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode);
 
 #endif
