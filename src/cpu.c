@@ -1640,7 +1640,12 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             instruction_misc_sbc(cpu, read_reg_BC(cpu));
             break;
         case 0x43: //LD (nn),BC
+            {
+            uint16_t adr = cpu_GetLIWord(cpu);
+            cpu->memory->memory[adr] = cpu->reg_C;
+            cpu->memory->memory[adr+1] = cpu->reg_B;
             break;
+            }
         case 0x44: //NEG
             break;
         case 0x45: //RETN
@@ -1674,7 +1679,12 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             instruction_misc_sbc(cpu, read_reg_DE(cpu));
             break;
         case 0x53: //LD (nn),DE
+            {
+            uint16_t adr = cpu_GetLIWord(cpu);
+            cpu->memory->memory[adr] = cpu->reg_D;
+            cpu->memory->memory[adr+1] = cpu->reg_E;
             break;
+            }
         case 0x56: //IM 1
             break;
         case 0x57: //LD A,I
