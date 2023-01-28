@@ -318,10 +318,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->SP ++;
             break;
         case 0x34: //INC (HL)
-            instruction_inc_8(cpu, &PTR(HL), 1);
+            instruction_inc_8(cpu, &PTR_HL, 1);
             break;
         case 0x35: //DEC (HL)
-            instruction_inc_8(cpu, &PTR(HL), -1);
+            instruction_inc_8(cpu, &PTR_HL, -1);
             break;
         case 0x36: //LD (HL),n
             cpu->memory->memory[read_reg_HL(cpu)] = memory_read8(cpu->memory, ++cpu->PC);
@@ -389,7 +389,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->reg_B = cpu->reg_L;
             break;
         case 0x46: //LD B,(HL)
-            cpu->reg_B = PTR(HL);
+            cpu->reg_B = PTR_HL;
             break;
         case 0x47: //LD B,A 
             cpu->reg_B = cpu->reg_A;
@@ -413,7 +413,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->reg_C = cpu->reg_L;
             break;
         case 0x4e: //LD C,(HL)
-            cpu->reg_C = PTR(HL);
+            cpu->reg_C = PTR_HL;
             break;
         case 0x4f: //LD C,A 
             cpu->reg_C = cpu->reg_A;
@@ -437,7 +437,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->reg_D = cpu->reg_L;
             break;
         case 0x56: //LD D,(HL)
-            cpu->reg_D = PTR(HL);
+            cpu->reg_D = PTR_HL;
             break;
         case 0x57: //LD D,A 
             cpu->reg_D = cpu->reg_A;
@@ -461,7 +461,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->reg_E = cpu->reg_L;
             break;
         case 0x5e: //LD E,(HL)
-            cpu->reg_E = PTR(HL);
+            cpu->reg_E = PTR_HL;
             break;
         case 0x5f: //LD E,A 
             cpu->reg_E = cpu->reg_A;
@@ -485,7 +485,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->reg_H = cpu->reg_L;
             break;
         case 0x66: //LD H,(HL)
-            cpu->reg_H = PTR(HL);
+            cpu->reg_H = PTR_HL;
             break;
         case 0x67: //LD H,A
             cpu->reg_H = cpu->reg_A;
@@ -509,7 +509,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->reg_L = cpu->reg_L;
             break;
         case 0x6e: //LD L,(HL)
-            cpu->reg_L = PTR(HL);
+            cpu->reg_L = PTR_HL;
             break;
         case 0x6f: //LD L,A
             cpu->reg_L = cpu->reg_A;
@@ -557,7 +557,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->reg_A = cpu->reg_L;
             break;
         case 0x7e: //LD A,(HL)
-            cpu->reg_A = PTR(HL);
+            cpu->reg_A = PTR_HL;
             break;
         case 0x7f: //LD A,A
             cpu->reg_A = cpu->reg_A;
@@ -582,7 +582,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
         case 0x86: //ADD A,(HL)
             {
-            instruction_add(cpu, PTR(HL));
+            instruction_add(cpu, PTR_HL);
             break;
             }
         case 0x87: //ADD A,A
@@ -607,7 +607,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             instruction_adc(cpu, cpu->reg_L);
             break;
         case 0x8e: //ADC A,(HL)
-            instruction_adc(cpu, PTR(HL));
+            instruction_adc(cpu, PTR_HL);
             break;
         case 0x8f: //ADC A,A
             instruction_adc(cpu, cpu->reg_A);
@@ -631,7 +631,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             instruction_sub(cpu, cpu->reg_L);
             break;
         case 0x96: //SUB A,(HL)
-            instruction_sub(cpu, PTR(HL));
+            instruction_sub(cpu, PTR_HL);
             break;
         case 0x97: //SUB A,A
             instruction_sub(cpu, cpu->reg_A);
@@ -655,7 +655,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             instruction_sbc(cpu, cpu->reg_L);
             break;
         case 0x9e: //SBC A,(HL)
-            instruction_sbc(cpu, PTR(HL));
+            instruction_sbc(cpu, PTR_HL);
             break;
         case 0x9f: //SBC A,A
             instruction_sbc(cpu, cpu->reg_A);
@@ -679,7 +679,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             instruction_ana(cpu, cpu->reg_L);
             break;
         case 0xa6: //AND (HL)
-            instruction_ana(cpu, PTR(HL));
+            instruction_ana(cpu, PTR_HL);
             break;
         case 0xa7: //AND A
             instruction_ana(cpu, cpu->reg_A);
@@ -703,7 +703,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             instruction_xra(cpu, cpu->reg_L);
             break;
         case 0xae: //XOR (HL)
-            instruction_xra(cpu, PTR(HL));
+            instruction_xra(cpu, PTR_HL);
             break;
         case 0xaf: //XOR A
             instruction_xra(cpu, cpu->reg_A);
@@ -727,7 +727,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             instruction_ora(cpu, cpu->reg_L);
             break;
         case 0xb6: //ORA (HL)
-            instruction_ora(cpu, PTR(HL));
+            instruction_ora(cpu, PTR_HL);
             break;
         case 0xb7: //ORA A
             instruction_ora(cpu, cpu->reg_A);
@@ -751,7 +751,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             instruction_cmp(cpu, cpu->reg_L);
             break;
         case 0xbe: //CMP (HL)
-            instruction_cmp(cpu, PTR(HL));
+            instruction_cmp(cpu, PTR_HL);
             break;
         case 0xbf: //CMP A
             instruction_cmp(cpu, cpu->reg_A);
@@ -1211,9 +1211,9 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
             flags_test_P(&cpu->flags, cpu->reg_L);
             break;
         case 0x06: //RLC (HL)
-            instruction_rlc(cpu, &PTR(HL));
-            flags_test_ZS(&cpu->flags, PTR(HL));
-            flags_test_P(&cpu->flags, PTR(HL));
+            instruction_rlc(cpu, &PTR_HL);
+            flags_test_ZS(&cpu->flags, PTR_HL);
+            flags_test_P(&cpu->flags, PTR_HL);
             break;
         case 0x07: //RLC A
             instruction_rlc(cpu, &cpu->reg_A);
@@ -1251,9 +1251,9 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
             flags_test_P(&cpu->flags, cpu->reg_L);
             break;
         case 0x0e: //RRC (HL)
-            instruction_rrc(cpu, &PTR(HL));
-            flags_test_ZS(&cpu->flags, PTR(HL));
-            flags_test_P(&cpu->flags, PTR(HL));
+            instruction_rrc(cpu, &PTR_HL);
+            flags_test_ZS(&cpu->flags, PTR_HL);
+            flags_test_P(&cpu->flags, PTR_HL);
             break;
         case 0x0f: //RRC A
             instruction_rrc(cpu, &cpu->reg_A);
@@ -1291,9 +1291,9 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
             flags_test_P(&cpu->flags, cpu->reg_L);
             break;
         case 0x16: //RL (HL)
-            instruction_rl(cpu, &PTR(HL));
-            flags_test_ZS(&cpu->flags, PTR(HL));
-            flags_test_P(&cpu->flags, PTR(HL));
+            instruction_rl(cpu, &PTR_HL);
+            flags_test_ZS(&cpu->flags, PTR_HL);
+            flags_test_P(&cpu->flags, PTR_HL);
             break;
         case 0x17: //RL A
             instruction_rl(cpu, &cpu->reg_A);
@@ -1331,9 +1331,9 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
             flags_test_P(&cpu->flags, cpu->reg_L);
             break;
         case 0x1e: //RR (HL)
-            instruction_rr(cpu, &PTR(HL));
-            flags_test_ZS(&cpu->flags, PTR(HL));
-            flags_test_P(&cpu->flags, PTR(HL));
+            instruction_rr(cpu, &PTR_HL);
+            flags_test_ZS(&cpu->flags, PTR_HL);
+            flags_test_P(&cpu->flags, PTR_HL);
             break;
         case 0x1f: //RR A
             instruction_rr(cpu, &cpu->reg_A);
@@ -1359,7 +1359,7 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
             instruction_sla(cpu, &cpu->reg_L);
             break;
         case 0x26: //SLA (HL)
-            instruction_sla(cpu, &PTR(HL));
+            instruction_sla(cpu, &PTR_HL);
             break;
         case 0x27: //SLA A
             instruction_sla(cpu, &cpu->reg_A);
@@ -1383,7 +1383,7 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
             instruction_sra(cpu, &cpu->reg_L);
             break;
         case 0x2e: //SRA (HL)
-            instruction_sra(cpu, &PTR(HL));
+            instruction_sra(cpu, &PTR_HL);
             break;
         case 0x2f: //SRA A
             instruction_sra(cpu, &cpu->reg_A);
@@ -1407,7 +1407,7 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
             instruction_srl(cpu, &cpu->reg_L);
             break;
         case 0x3e: //SRL (HL)
-            instruction_srl(cpu, &PTR(HL));
+            instruction_srl(cpu, &PTR_HL);
             break;
         case 0x3f: //SRL A
             instruction_srl(cpu, &cpu->reg_A);
@@ -1647,12 +1647,17 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             break;
             }
         case 0x44: //NEG
+            cpu->reg_A = ~(cpu->reg_A) + 1;
+            flags_test_V(&cpu->flags, 0, cpu->reg_A);
             break;
         case 0x45: //RETN
+                   //TODO
             break;
         case 0x46: //IM 0
+                   //TODO
             break;
         case 0x47: //LD I,A
+            cpu->reg_I = cpu->reg_A;
             break;
         case 0x48: //IN C,(C)
             io_routines_IN(cpu, &cpu->reg_C);
@@ -1664,10 +1669,17 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             instruction_misc_adc(cpu, read_reg_BC(cpu));
             break;
         case 0x4b: //LD BC,(nn)
+            {
+            uint16_t adr = cpu_GetLIWord(cpu);
+            cpu->reg_C = cpu->memory->memory[adr];
+            cpu->reg_B = cpu->memory->memory[adr+1];
             break;
+            }
         case 0x4d: //RETI
+                   //TODO
             break;
         case 0x4f: //LD R,A
+            cpu->reg_R = cpu->reg_A;
             break;
         case 0x50: //IN D,(c)
             io_routines_IN(cpu, &cpu->reg_D);
@@ -1686,8 +1698,10 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             break;
             }
         case 0x56: //IM 1
+                   //TODO
             break;
         case 0x57: //LD A,I
+            cpu->reg_A = cpu->reg_I;
             break;
         case 0x58: //IN E,(C)
             io_routines_IN(cpu, &cpu->reg_E);
@@ -1699,10 +1713,18 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             instruction_misc_adc(cpu, read_reg_DE(cpu));
             break;
         case 0x5b: //LD DE,(nn)
+            {
+            uint16_t adr = cpu_GetLIWord(cpu);
+            cpu->reg_E = cpu->memory->memory[adr];
+            cpu->reg_D = cpu->memory->memory[adr+1];
+            break;
+            }
             break;
         case 0x5e: //IM 2
+                   //TODO
             break;
         case 0x5f: //LD A,R
+            cpu->reg_A = cpu->reg_R;
             break;
         case 0x60: //IN H,(c)
             io_routines_IN(cpu, &cpu->reg_H);
@@ -1714,7 +1736,19 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             instruction_misc_sbc(cpu, read_reg_HL(cpu));
             break;
         case 0x67: //RRD
+            {
+            uint8_t temp_reg_A = cpu->reg_A;
+            cpu->reg_A = (cpu->reg_A & 0xf0) | (PTR_HL & 0x0f);
+            PTR_HL >>= 4;             //logical shift right 
+            PTR_HL |= (temp_reg_A) << 4;
+            //flags
+            cpu->flags.n = 0;
+            flags_test_P(&cpu->flags, cpu->reg_A);
+            cpu->flags.h = 0;
+            cpu->flags.z = cpu->reg_A == 0? 1 : 0;
+            cpu->flags.s = cpu->reg_A & 0x80? 1 : 0;
             break;
+            }
         case 0x68: //IN L,(c)
             io_routines_IN(cpu, &cpu->reg_L);
             break;
@@ -1725,12 +1759,29 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             instruction_misc_adc(cpu, read_reg_HL(cpu));
             break;
         case 0x6f: //RLD
+            {
+            uint8_t temp_reg_A = cpu->reg_A;
+            cpu->reg_A = (cpu->reg_A & 0xf0); 
+            cpu->reg_A |= (PTR_HL & 0xf0) >> 4;
+            PTR_HL = (PTR_HL << 4) | (temp_reg_A & 0x0f);
+            //flags
+            cpu->flags.n = 0;
+            flags_test_P(&cpu->flags, cpu->reg_A);
+            cpu->flags.h = 0;
+            cpu->flags.z = cpu->reg_A == 0? 1 : 0;
+            cpu->flags.s = cpu->reg_A & 0x80? 1 : 0;
             break;
+            }
         case 0x72: //SBC HL,SP
             instruction_misc_sbc(cpu, cpu->SP);
             break;
         case 0x73: //LD (nn),SP
+            {
+            uint16_t adr = cpu_GetLIWord(cpu);
+            cpu->memory->memory[adr] = cpu->SP & 0x00ff;
+            cpu->memory->memory[adr+1] = (cpu->SP & 0xff00) >> 8;
             break;
+            }
         case 0x78: //IN A,(c)
             io_routines_IN(cpu, &cpu->reg_A);
             break;
@@ -1741,38 +1792,159 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             instruction_misc_adc(cpu, cpu->SP);
             break;
         case 0x7b: //LD SP,(nn)
+            {
+            uint16_t new_SP = 0;
+            uint16_t adr = cpu_GetLIWord(cpu);
+            new_SP |= cpu->memory->memory[adr];
+            new_SP |= (cpu->memory->memory[adr+1]) << 8;
+            cpu->SP = new_SP;
             break;
+            }
         case 0xa0: //LDI
+            PTR_DE = PTR_HL;
+            write_reg_DE(cpu, read_reg_DE(cpu) + 1);
+            write_reg_HL(cpu, read_reg_HL(cpu) + 1);
+            write_reg_BC(cpu, read_reg_BC(cpu) - 1);
+            cpu->flags.h = 0;
+            cpu->flags.p = read_reg_BC(cpu) != 0? 1 : 0;
+            cpu->flags.n = 0;
             break;
         case 0xa1: //CPI
+            {
+            uint8_t subtrahend = PTR_HL;
+            uint8_t result = cpu->reg_A - subtrahend;
+
+            cpu->flags.h = 0;
+            if(~(cpu->reg_A ^ result ^ subtrahend) & 0x10){
+                cpu->flags.h = 1;
+            }
+
+            flags_test_ZS(&cpu->flags, (uint8_t) result);
+            cpu->flags.n = 1;
+
+            write_reg_HL(cpu, read_reg_HL(cpu) + 1);
+            write_reg_BC(cpu, read_reg_BC(cpu) - 1);
+            cpu->flags.p = read_reg_BC(cpu) != 0? 1 : 0;
             break;
+            }
         case 0xa2: //INI
+                   //TODO
             break;
         case 0xa3: //OUTI
+                   //TODO
             break;
         case 0xa8: //LDD
+            PTR_DE = PTR_HL;
+            write_reg_DE(cpu, read_reg_DE(cpu) - 1);
+            write_reg_HL(cpu, read_reg_HL(cpu) - 1);
+            write_reg_BC(cpu, read_reg_BC(cpu) - 1);
+            cpu->flags.h = 0;
+            cpu->flags.p = read_reg_BC(cpu) != 0? 1 : 0;
+            cpu->flags.n = 0;
             break;
         case 0xa9: //CPD
+            {
+            uint8_t subtrahend = PTR_HL;
+            uint8_t result = cpu->reg_A - subtrahend;
+
+            cpu->flags.h = 0;
+            if(~(cpu->reg_A ^ result ^ subtrahend) & 0x10){
+                cpu->flags.h = 1;
+            }
+
+            flags_test_ZS(&cpu->flags, (uint8_t) result);
+            cpu->flags.n = 1;
+
+            write_reg_HL(cpu, read_reg_HL(cpu) - 1);
+            write_reg_BC(cpu, read_reg_BC(cpu) - 1);
+            cpu->flags.p = read_reg_BC(cpu) != 0? 1 : 0;
             break;
+            }
         case 0xaa: //IND
+                   //TODO
             break;
         case 0xab: //OUTD
+                   //TODO
             break;
         case 0xb0: //LDIR
+            PTR_DE = PTR_HL;
+            write_reg_DE(cpu, read_reg_DE(cpu) + 1);
+            write_reg_HL(cpu, read_reg_HL(cpu) + 1);
+            write_reg_BC(cpu, read_reg_BC(cpu) - 1);
+            if(read_reg_BC(cpu) != 0){
+                cpu->PC -= 2;
+                //Instruction repeats and interrupts are recognized
+            }
+            cpu->flags.h = 0;
+            cpu->flags.p = 0;
+            cpu->flags.n = 0;
             break;
         case 0xb1: //CPIR
+            {
+            uint8_t subtrahend = PTR_HL;
+            uint8_t result = cpu->reg_A - subtrahend;
+
+            cpu->flags.h = 0;
+            if(~(cpu->reg_A ^ result ^ subtrahend) & 0x10){
+                cpu->flags.h = 1;
+            }
+
+            flags_test_ZS(&cpu->flags, (uint8_t) result);
+            cpu->flags.n = 1;
+
+            write_reg_HL(cpu, read_reg_HL(cpu) + 1);
+            write_reg_BC(cpu, read_reg_BC(cpu) - 1);
+            cpu->flags.p = read_reg_BC(cpu) != 0? 1 : 0;
+            if(cpu->flags.p && !cpu->flags.z){
+                cpu->PC -= 2;
+            }
             break;
+            }
         case 0xb2: //INIR
+                   //TODO
             break;
         case 0xb3: //OTIR 
+                   //TODO
             break;
         case 0xb8: //LDDR
+            PTR_DE = PTR_HL;
+            write_reg_DE(cpu, read_reg_DE(cpu) - 1);
+            write_reg_HL(cpu, read_reg_HL(cpu) - 1);
+            write_reg_BC(cpu, read_reg_BC(cpu) - 1);
+            if(read_reg_BC(cpu) != 0){
+                cpu->PC -= 2;
+                //Instruction repeats and interrupts are recognized
+            }
+            cpu->flags.h = 0;
+            cpu->flags.p = 0;
+            cpu->flags.n = 0;
             break;
         case 0xb9: //CPDR
+            {
+            uint8_t subtrahend = PTR_HL;
+            uint8_t result = cpu->reg_A - subtrahend;
+
+            cpu->flags.h = 0;
+            if(~(cpu->reg_A ^ result ^ subtrahend) & 0x10){
+                cpu->flags.h = 1;
+            }
+
+            flags_test_ZS(&cpu->flags, (uint8_t) result);
+            cpu->flags.n = 1;
+
+            write_reg_HL(cpu, read_reg_HL(cpu) - 1);
+            write_reg_BC(cpu, read_reg_BC(cpu) - 1);
+            cpu->flags.p = read_reg_BC(cpu) != 0? 1 : 0;
+            if(cpu->flags.p && !cpu->flags.z){
+                cpu->PC -= 2;
+            }
             break;
+            }
         case 0xba: //INDR
+                   //TODO
             break;
         case 0xbb: //OTDR
+                   //TODO
             break;
     }
 }

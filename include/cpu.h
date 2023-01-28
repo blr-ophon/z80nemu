@@ -1,7 +1,8 @@
 #ifndef CPU_H
 #define CPU_H 
 
-#define PTR(HL)  cpu->memory->memory[read_reg_HL(cpu)]
+#define PTR_DE  cpu->memory->memory[read_reg_DE(cpu)]
+#define PTR_HL  cpu->memory->memory[read_reg_HL(cpu)]
 
 #include <string.h>
 #include <stdlib.h>
@@ -31,6 +32,8 @@ typedef struct cpu8080{
     uint8_t reg_E;
     uint8_t reg_H;
     uint8_t reg_L;
+    uint8_t reg_I;
+    uint8_t reg_R;
     uint16_t PC;
     uint16_t SP;
     uint16_t reg_IX;

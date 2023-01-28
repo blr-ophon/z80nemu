@@ -140,7 +140,7 @@ void instruction_res_set(struct cpu8080 *cpu, uint8_t opcode, bool bit_state){
             regPtr = &cpu->reg_L;
             break;
         case 0x6: //(HL)
-            regPtr = &PTR(HL);
+            regPtr = &PTR_HL;
             break;
         case 0x7: //A
             regPtr = &cpu->reg_A;
@@ -178,7 +178,7 @@ void instruction_bit(struct cpu8080 *cpu, uint8_t opcode){
             temp = cpu->reg_L;
             break;
         case 0x6: //(HL)
-            temp = PTR(HL);
+            temp = PTR_HL;
             break;
         case 0x7: //A
             temp = cpu->reg_A;
