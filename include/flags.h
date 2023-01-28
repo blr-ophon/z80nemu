@@ -15,6 +15,8 @@ typedef struct flags{
 
 void flags_test_V(Flags *flags, uint8_t a, uint8_t b);
 
+void flags_test_V16(Flags *flags, uint16_t a, uint16_t b);
+
 void flags_test_P(Flags *flags, uint8_t result);
 
 void flags_test_ZS(Flags *flags, uint8_t result);

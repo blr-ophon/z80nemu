@@ -19,7 +19,7 @@ void memory_free(Memory *memory){
 
 //concatenate all to memory_read and number of bytes as a parameter
 //makes no sense since there is a limit to number of bytes that can
-//be read (8)
+//be returned (8)
 uint8_t memory_read8(Memory *memory, uint16_t address){
     //create in cpu get_next_bytes(size) which increments PC after reading
     check_boundaries(memory, address);

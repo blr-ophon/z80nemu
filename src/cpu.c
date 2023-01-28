@@ -1,4 +1,6 @@
 #include "cpu.h"
+//TODO: create a common header for cpu.h, flags.h, instructions.h and io_routines.h
+//to avoid redefinition of structs errors
 //TODO: CPU speed
 //TODO modularize this code into cpuIXIY cpubit and such
 //to make debug easier
@@ -28,14 +30,12 @@ void cpu_init(Cpu8080 *cpu, Memory *memory){
     cpu->memory = memory;
 }
 
-void cpu_fetch_execute(Cpu8080 *cpu){
-
+void cpu_cycle(Cpu8080 *cpu){
+    //Check for interrupts and bus requests
     if(cpu->INT_pin && cpu->interrupt_enable){ //RST, byte
-        cpu->INT_pin = 0;
-        stack_push16(cpu, cpu->PC);
-//        cpu->PC = INTERRUPT_VECTOR_SIZE * cpu->interrupt_address;
     }
 
+    //fetch
     uint8_t opcode = memory_read8(cpu->memory, cpu->PC);
     cpu_exec_instruction(cpu, &opcode);
     cpu->PC ++;
@@ -904,9 +904,9 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             //duplicated byte on address bus
             uint16_t adr = (uint16_t) memory_read8(cpu->memory, ++cpu->PC);
             adr |= adr << 8;
-            cpu->address_bus = adr; 
+            *(cpu->address_bus) = adr; 
             //reg_A on data_bus
-            cpu->data_bus = cpu->reg_A;
+            *(cpu->data_bus) = cpu->reg_A;
             cpu->IORQ_pin = 0;  //active low 
             cpu->WR_pin = 0;    //active low 
             cpu->RD_pin = 1;    //active low
@@ -956,7 +956,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             {
             uint16_t adr = (uint16_t) memory_read8(cpu->memory, ++cpu->PC);
             adr |= adr << 8;
-            cpu->address_bus = adr; 
+            *(cpu->address_bus) = adr; 
             cpu->IORQ_pin = 0;  //active low 
             cpu->WR_pin = 1;    //active low 
             cpu->RD_pin = 0;    //active low
@@ -1594,45 +1594,39 @@ void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t opcode, bool iy_mode){
     }
 }
 
-void io_routines_IN(Cpu8080 *cpu, uint8_t *reg_x){
-    //Instruction is executed in two parts. 
-    //
-    //In the first oneit sends the address to address bus and sets proper 
-    //pins, then breaks opcode execution so that a machine specific function
-    //can do whatever it wants with this information, such as strobing or,
-    //what is more common, set a byte in address bus to be read.
-    //
-    //In the second one, it resets the proper pins and read whatever
-    //is in data bus to an specified register, setting the flags accordingly.
-    //
-    //
-    //FIRST PART OF INSTRUCTION
-    if(cpu->IORQ_pin){ //active low
-        cpu->IORQ_pin = 0;
-        cpu->MREQ_pin = 1;
-        cpu->RD_pin = 0;
-        cpu->WR_pin = 1;
-        cpu->address_bus = read_reg_BC(cpu);
-        cpu->PC -= 2; //TODO: check/test
-        return;
-        //this function will be called again for the second part as long as 
-        //nothing changes PC. TODO: Protect this routine against interrupts 
-        //and DMAs. If an interrupt changes PC in the middle of an instruction,
-        //this can break the emulation because of the pins. The emulation will
-        //fetch instruction again for IN instructions, but the actual hardware
-        //only fetches IN one time, so the second time does not count as an 
-        //actual fetch to allow DMA and interrupts.
-    } 
-
-    //SECOND PART OF INSTRUCTION
-    cpu->IORQ_pin = 1;
-    cpu->MREQ_pin = 0;
-    cpu->RD_pin = 0;
-    cpu->WR_pin = 1;
-    *reg_x = cpu->data_bus;
+void instruction_misc_adc(struct cpu8080 *cpu, uint16_t reg_x){
+    uint32_t result = read_reg_HL(cpu) + reg_x + cpu->flags.cy;
+    //NOTE: if this doesnt pass tests, try adding the borrow to cpu->reg_A instead
+    flags_test_V16(&cpu->flags, read_reg_HL(cpu), reg_x + cpu->flags.cy);
+    flags_test_H16(&cpu->flags, read_reg_HL(cpu), reg_x, cpu->flags.cy);
+    flags_test_C16(&cpu->flags, result);
+    cpu->flags.z = result == 0? 1 : 0;
+    cpu->flags.s = result & 0x8000? 1 : 0;
     cpu->flags.n = 0;
-    cpu->flags.h = 0;
+
+    write_reg_HL(cpu, result);
 }
+
+void instruction_misc_sbc(struct cpu8080 *cpu, uint16_t reg_x){
+    uint8_t borrow = ~(cpu->flags.cy) & 0x01;
+    uint32_t result = read_reg_HL(cpu) + ~reg_x + borrow;
+
+    cpu->flags.cy = 0;
+    if((result ^ read_reg_HL(cpu) ^ ~reg_x) & 0x0100){ 
+        cpu->flags.cy = 1;
+    }
+
+    //NOTE: if this doesnt pass tests, try adding the borrow to cpu->reg_A instead
+    flags_test_V16(&cpu->flags, read_reg_HL(cpu), ~(reg_x) + borrow);
+    flags_test_H16(&cpu->flags, read_reg_HL(cpu), ~reg_x, borrow);
+    cpu->flags.z = result == 0? 1 : 0;
+    cpu->flags.s = result & 0x8000? 1 : 0;
+    cpu->flags.cy = ~cpu->flags.cy & 0x01;
+    cpu->flags.n = 1;
+
+    write_reg_HL(cpu, result);
+}
+
 
 void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
     switch(opcode){
@@ -1640,8 +1634,10 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             io_routines_IN(cpu, &cpu->reg_B);
             break;
         case 0x41: //OUT (c),B
+            io_routines_OUT(cpu, &cpu->reg_B);
             break;
         case 0x42: //SBC HL,BC
+            instruction_misc_sbc(cpu, read_reg_BC(cpu));
             break;
         case 0x43: //LD (nn),BC
             break;
@@ -1657,8 +1653,10 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             io_routines_IN(cpu, &cpu->reg_C);
             break;
         case 0x49: //OUT (C),C
+            io_routines_OUT(cpu, &cpu->reg_C);
             break;
         case 0x4a: //ADC HL,BC
+            instruction_misc_adc(cpu, read_reg_BC(cpu));
             break;
         case 0x4b: //LD BC,(nn)
             break;
@@ -1670,8 +1668,10 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             io_routines_IN(cpu, &cpu->reg_D);
             break;
         case 0x51: //OUT (c),D
+            io_routines_OUT(cpu, &cpu->reg_D);
             break;
         case 0x52: //SBC HL,DE
+            instruction_misc_sbc(cpu, read_reg_DE(cpu));
             break;
         case 0x53: //LD (nn),DE
             break;
@@ -1683,8 +1683,10 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             io_routines_IN(cpu, &cpu->reg_E);
             break;
         case 0x59: //OUT (C),E
+            io_routines_OUT(cpu, &cpu->reg_E);
             break;
         case 0x5a: //ADC HL,DE
+            instruction_misc_adc(cpu, read_reg_DE(cpu));
             break;
         case 0x5b: //LD DE,(nn)
             break;
@@ -1696,8 +1698,10 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             io_routines_IN(cpu, &cpu->reg_H);
             break;
         case 0x61: //OUT (c),H
+            io_routines_OUT(cpu, &cpu->reg_H);
             break;
         case 0x62: //SBC HL,HL
+            instruction_misc_sbc(cpu, read_reg_HL(cpu));
             break;
         case 0x67: //RRD
             break;
@@ -1705,12 +1709,15 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             io_routines_IN(cpu, &cpu->reg_L);
             break;
         case 0x69: //OUT (c),L
+            io_routines_OUT(cpu, &cpu->reg_L);
             break;
         case 0x6a: //ADC HL,HL
+            instruction_misc_adc(cpu, read_reg_HL(cpu));
             break;
         case 0x6f: //RLD
             break;
         case 0x72: //SBC HL,SP
+            instruction_misc_sbc(cpu, cpu->SP);
             break;
         case 0x73: //LD (nn),SP
             break;
@@ -1718,8 +1725,10 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             io_routines_IN(cpu, &cpu->reg_A);
             break;
         case 0x79: //OUT (c),A
+            io_routines_OUT(cpu, &cpu->reg_A);
             break;
         case 0x7a: //ADC HL,SP
+            instruction_misc_adc(cpu, cpu->SP);
             break;
         case 0x7b: //LD SP,(nn)
             break;

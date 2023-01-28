@@ -14,6 +14,20 @@ void flags_test_V(Flags *flags, uint8_t a, uint8_t b){
     }
 }
 
+void flags_test_V16(Flags *flags, uint16_t a, uint16_t b){
+    //TODO: logic for a+b+carry 
+    if((a^b) & 0x8000){ //if a and b have different sign bits
+        flags->p = 0;
+    }
+    else{
+        uint16_t result = a + b;
+        //compares sign of initial value and result
+        uint16_t diff_sign = (a^result) & 0x8000;
+        //if the signs different, set overflow
+        flags->p = diff_sign >> 15;
+    }
+}
+
 void flags_test_P(Flags *flags, uint8_t result){
     uint8_t parity = 1;
     for(int i = 0; i < 8; i++){

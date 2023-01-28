@@ -44,7 +44,7 @@ int main(int argc, char *argv[]){
         if(cpu.PC == 0x0005){
             test_print_subroutine(&cpu);
         }
-        cpu_fetch_execute(&cpu);
+        cpu_cycle(&cpu);
     }
 
     memory_free(memory);

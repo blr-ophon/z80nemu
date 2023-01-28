@@ -339,10 +339,10 @@ void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x){
     flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x) + 1);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, 1);
     flags_test_ZS(&cpu->flags, result);
-
-    cpu->reg_A = result;
     cpu->flags.cy = ~(cpu->flags.cy) & 0x01;
     cpu->flags.n = 1;
+
+    cpu->reg_A = result;
 }
 
 void instruction_sbc(struct cpu8080 *cpu, uint8_t reg_x){
@@ -358,10 +358,10 @@ void instruction_sbc(struct cpu8080 *cpu, uint8_t reg_x){
     flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x) + borrow);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, borrow);
     flags_test_ZS(&cpu->flags, result);
-
-    cpu->reg_A = result;
     cpu->flags.cy = ~cpu->flags.cy & 0x01;
     cpu->flags.n = 1;
+    
+    cpu->reg_A = result;
 }
 
 void instruction_cmp(struct cpu8080 *cpu, uint8_t reg_x){
