@@ -30,18 +30,11 @@ clean:
 	rm -rf ${MERGED_OBJECT}
 
 testleak: ${EXEC}
-	valgrind --leak-check=full --show-leak-kinds=all ./$^ ./tests/TST8080.COM
+	valgrind --leak-check=full --show-leak-kinds=all ./$^ ./tests/prelim.com
 
-test-8080: testrom1 testrom2 testrom3
 
-testrom1: ${EXEC} 
-	./$< ./tests/TST8080.COM 
-
-testrom2: ${EXEC}
-	./$< ./tests/8080PRE.COM
-
-testrom3: ${EXEC}
-	./$< ./tests/8080EXM.COM
+testrom: ${EXEC} 
+	./$< ./tests/prelim.com
 
 debug: ${EXEC}
-	cgdb --args ./$< ./tests/TST8080.COM
+	cgdb --args ./$< ./tests/prelim.com
