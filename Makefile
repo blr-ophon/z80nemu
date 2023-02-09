@@ -18,7 +18,7 @@ ${EXEC}: ${MERGED_OBJECT}
 	gcc ${CFLAGS} ${INCLUDES} $^ -o $@
 
 ${MERGED_OBJECT}: ${OBJECTS}
-	ld -r -o $@ $^
+	ld -r -o $@ $^ -g
 
 ${BUILD_DIR}/%.o: ${CFILES_DIR}/%.c
 	mkdir -p $(dir $@)
@@ -29,12 +29,14 @@ clean:
 	rm -rf ${EXEC}
 	rm -rf ${MERGED_OBJECT}
 
-testleak: ${EXEC}
-	valgrind --leak-check=full --show-leak-kinds=all ./$^ ./tests/prelim.com
-
-
-testrom: ${EXEC} 
+prelim: ${EXEC} 
 	./$< ./tests/prelim.com
+
+zexdoc: ${EXEC}
+	./$< ./tests/zexdoc.cim
+
+zexall: ${EXEC}
+	./$< ./tests/zexall.cim
 
 debug: ${EXEC}
 	cgdb --args ./$< ./tests/prelim.com

@@ -826,8 +826,8 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
         case 0xcb: //PREFIX: BIT INSTRUCTIONS
             {
-            uint8_t opcode = memory_read8(cpu->memory, ++cpu->PC);
-            cpu_bit_instructions(cpu, &opcode);
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            cpu_bit_instructions(cpu, &prf_opcode);
             break;
             }
         case 0xcc: //CALL Z,nn
@@ -949,8 +949,8 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             }
         case 0xdd: //PREFIX: IX INSTRUCTIONS
             {
-            uint8_t opcode = memory_read8(cpu->memory, ++cpu->PC);
-            cpu_IXIY_instructions(cpu, &opcode, 0);
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            cpu_IXIY_instructions(cpu, &prf_opcode, 0);
             break;
             }
         case 0xde: //SBC A,n
@@ -1044,6 +1044,12 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
                 stack_push16(cpu, cpu->PC+1);
                 cpu->PC = adr -1;
             }
+            break;
+            }
+        case 0xed: //PREFIX: MISC INTRUCTIONS
+            {
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            cpu_misc_instructions(cpu, prf_opcode);
             break;
             }
         case 0xee: //XOR n
@@ -1140,6 +1146,12 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             {
             uint8_t operand = memory_read8(cpu->memory, ++cpu->PC);
             instruction_cmp(cpu, operand);
+            break;
+            }
+        case 0xfd: //PREFIX: IY INSTRUCTIONS
+            {
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            cpu_IXIY_instructions(cpu, &prf_opcode, 1);
             break;
             }
         case 0xff: //RST 38H
