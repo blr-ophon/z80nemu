@@ -10,7 +10,7 @@ void flags_test_V(Flags *flags, uint8_t a, uint8_t b){
         //compares sign of initial value and result
         uint8_t diff_sign = (a^result) & 0x80;
         //if the signs different, set overflow
-        flags->p = diff_sign >> 7;
+        flags->p = diff_sign? 1 : 0;
     }
 }
 
@@ -24,7 +24,7 @@ void flags_test_V16(Flags *flags, uint16_t a, uint16_t b){
         //compares sign of initial value and result
         uint16_t diff_sign = (a^result) & 0x8000;
         //if the signs different, set overflow
-        flags->p = diff_sign >> 15;
+        flags->p = diff_sign? 1 : 0;
     }
 }
 

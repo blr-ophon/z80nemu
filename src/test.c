@@ -39,6 +39,7 @@ int main(int argc, char *argv[]){
     while(1){
         if(cpu.PC == 0x0000){
             printf("\nCall 0\n");
+            exit(EXIT_SUCCESS);
         }
         if(cpu.PC == 0x0005){
             test_print_subroutine(&cpu);

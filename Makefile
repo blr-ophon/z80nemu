@@ -39,4 +39,4 @@ zexall: ${EXEC}
 	./$< ./tests/zexall.cim
 
 debug: ${EXEC}
-	cgdb --args ./$< ./tests/prelim.com
+	cgdb --args ./$< ./tests/zexdoc.cim

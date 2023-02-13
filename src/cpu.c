@@ -1584,11 +1584,11 @@ void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t opcode, bool iy_mode){
 
 void instruction_misc_adc(struct cpu8080 *cpu, uint16_t reg_x){
     uint32_t result = read_reg_HL(cpu) + reg_x + cpu->flags.cy;
-    //NOTE: if this doesnt pass tests, try adding the borrow to cpu->reg_A instead
     flags_test_V16(&cpu->flags, read_reg_HL(cpu), reg_x + cpu->flags.cy);
     flags_test_H16(&cpu->flags, read_reg_HL(cpu), reg_x, cpu->flags.cy);
     flags_test_C16(&cpu->flags, result);
-    cpu->flags.z = result == 0? 1 : 0;
+
+    cpu->flags.z = (uint16_t)result == 0? 1 : 0;
     cpu->flags.s = result & 0x8000? 1 : 0;
     cpu->flags.n = 0;
 
@@ -1600,17 +1600,17 @@ void instruction_misc_sbc(struct cpu8080 *cpu, uint16_t reg_x){
     uint32_t result = read_reg_HL(cpu) + ~reg_x + borrow;
 
     cpu->flags.cy = 0;
-    if((result ^ read_reg_HL(cpu) ^ ~reg_x) & 0x0100){ 
+    if((result ^ read_reg_HL(cpu) ^ ~reg_x) & 0x10000){ 
         cpu->flags.cy = 1;
     }
 
-    //NOTE: if this doesnt pass tests, try adding the borrow to cpu->reg_A instead
     flags_test_V16(&cpu->flags, read_reg_HL(cpu), ~(reg_x) + borrow);
     flags_test_H16(&cpu->flags, read_reg_HL(cpu), ~reg_x, borrow);
-    cpu->flags.z = result == 0? 1 : 0;
-    cpu->flags.s = result & 0x8000? 1 : 0;
-    cpu->flags.cy = ~cpu->flags.cy & 0x01;
+
+    cpu->flags.z = (uint16_t)result == 0? 1 : 0;
+    cpu->flags.s = result & 0x08000? 1 : 0;
     cpu->flags.n = 1;
+    cpu->flags.cy = ~cpu->flags.cy & 0x01;
 
     write_reg_HL(cpu, result);
 }
@@ -1635,7 +1635,8 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             break;
             }
         case 0x44: //NEG
-            cpu->reg_A = ~(cpu->reg_A) + 1;
+                   //TODO: All flags should be tested here
+            cpu->reg_A = -cpu->reg_A;
             flags_test_V(&cpu->flags, 0, cpu->reg_A);
             break;
         case 0x45: //RETN
