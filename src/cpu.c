@@ -74,32 +74,11 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x04: //INC B 
-            //instruction_inc_8(cpu, &cpu->reg_B, 0);
-            {
-            uint8_t result = cpu->reg_B + 1;
-
-            cpu->flags.s = result >> 7;
-            cpu->flags.z = result == 0? 1 : 0;
-            cpu->flags.h = overflow(4, cpu->reg_B, 1, 0) == 1? 1 : 0;
-            cpu->flags.p = overflow(7, cpu->reg_B, 1, 0) != overflow(8, cpu->reg_B, 1, 0)? 1 : 0;
-            cpu->flags.n = 0;
-
-            cpu->reg_B = result;
+            instruction_inc(cpu, &cpu->reg_B);
             break;
-            }
         case 0x05: //DEC B 
-            //instruction_inc_8(cpu, &cpu->reg_B, 1);
-            {
-            const uint8_t result = cpu->reg_B + ~1 + 1;
-            cpu->flags.s = result >> 7;
-            cpu->flags.z = result == 0? 1 : 0;
-            cpu->flags.h = overflow(4, cpu->reg_B, ~1, 1)? 0 : 1;
-            cpu->flags.p = overflow(7, cpu->reg_B, ~1, 1) != overflow(8, cpu->reg_B, ~1, 1)? 1 : 0;
-            cpu->flags.n = 1;
-
-            cpu->reg_B = result;
+            instruction_dec(cpu, &cpu->reg_B);
             break;
-            }
         case 0x06: //MVI B,n 
             cpu->reg_B = memory_read8(cpu->memory, ++cpu->PC);
             break;
@@ -141,10 +120,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x0c: //INC C 
-            instruction_inc_8(cpu, &cpu->reg_C, 0);
+            instruction_inc(cpu, &cpu->reg_C);
             break;
         case 0x0d: //DEC C 
-            instruction_inc_8(cpu, &cpu->reg_C, 1);
+            instruction_dec(cpu, &cpu->reg_C);
             break;
         case 0x0e: //LD C,n 
             cpu->reg_C = memory_read8(cpu->memory, ++cpu->PC);
@@ -178,10 +157,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x14: //INC D 
-            instruction_inc_8(cpu, &cpu->reg_D, 0);
+            instruction_inc(cpu, &cpu->reg_D);
             break;
         case 0x15: //DEC D 
-            instruction_inc_8(cpu, &cpu->reg_D, 1);
+            instruction_dec(cpu, &cpu->reg_D);
             break;
         case 0x16: //LD D,n
             cpu->reg_D = memory_read8(cpu->memory, ++cpu->PC);
@@ -217,10 +196,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x1c: //INC E 
-            instruction_inc_8(cpu, &cpu->reg_E, 0);
+            instruction_inc(cpu, &cpu->reg_E);
             break;
         case 0x1d: //DEC E 
-            instruction_inc_8(cpu, &cpu->reg_E, 1);
+            instruction_dec(cpu, &cpu->reg_E);
             break;
         case 0x1e: //LD E,n
             cpu->reg_E = memory_read8(cpu->memory, ++cpu->PC);
@@ -254,10 +233,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x24: //INC H 
-            instruction_inc_8(cpu, &cpu->reg_H, 0);
+            instruction_inc(cpu, &cpu->reg_H);
             break;
         case 0x25: //DEC H 
-            instruction_inc_8(cpu, &cpu->reg_H, 1);
+            instruction_dec(cpu, &cpu->reg_H);
             break;
         case 0x26: //MVI H,n 
             cpu->reg_H = memory_read8(cpu->memory, ++cpu->PC);
@@ -312,10 +291,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
             }
         case 0x2c: //INC L
-            instruction_inc_8(cpu, &cpu->reg_L, 0);
+            instruction_inc(cpu, &cpu->reg_L);
             break;
         case 0x2d: //DEC L
-            instruction_inc_8(cpu, &cpu->reg_L, 1);
+            instruction_dec(cpu, &cpu->reg_L);
             break;
         case 0x2e: //MVI L,n 
             cpu->reg_L = memory_read8(cpu->memory, ++cpu->PC);
@@ -347,10 +326,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->SP ++;
             break;
         case 0x34: //INC (HL)
-            instruction_inc_8(cpu, &PTR_HL, 0);
+            instruction_inc(cpu, &PTR_HL);
             break;
         case 0x35: //DEC (HL)
-            instruction_inc_8(cpu, &PTR_HL, 1);
+            instruction_dec(cpu, &PTR_HL);
             break;
         case 0x36: //LD (HL),n
             cpu->memory->memory[read_reg_HL(cpu)] = memory_read8(cpu->memory, ++cpu->PC);
@@ -385,10 +364,10 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->SP --;
             break;
         case 0x3c: //INC A
-            instruction_inc_8(cpu, &cpu->reg_A, 0);
+            instruction_inc(cpu, &cpu->reg_A);
             break;
         case 0x3d: //DEC A
-            instruction_inc_8(cpu, &cpu->reg_A, 1);
+            instruction_dec(cpu, &cpu->reg_A);
             break;
         case 0x3e: //LD A,n
             cpu->reg_A = memory_read8(cpu->memory, ++cpu->PC);

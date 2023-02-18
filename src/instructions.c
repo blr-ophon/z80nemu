@@ -106,21 +106,6 @@ void instruction_ld(struct cpu8080 *cpu, uint8_t opcode){
     *targetPtr = *sourcePtr;
 }
 
-void instruction_inc_8(struct cpu8080 *cpu, uint8_t *reg_x, bool dec){
-    cpu->flags.n = dec == 1? 1 : 0;
-    uint8_t test_val = 1;
-    if(dec){
-        flags_test_H(&cpu->flags, *reg_x, ~test_val, 1);
-        cpu->flags.p = *reg_x == 0x80? 1 : 0;
-        (*reg_x) --;
-    }else{
-        flags_test_H(&cpu->flags, *reg_x, 1, 0);
-        cpu->flags.p = *reg_x == 0x7f? 1 : 0;
-        (*reg_x) ++;
-    }
-    flags_test_ZS(&cpu->flags, *reg_x);
-}
-
 void instruction_res_set(struct cpu8080 *cpu, uint8_t opcode, bool bit_state){
     //instruction format: 00bbbrrr, to set/reset bit b of register r 
     uint8_t bit_pos = (opcode & 0x38) >> 3; 
@@ -311,6 +296,25 @@ void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x){
     cpu->flags.h = 0;
 }
 
+void instruction_inc(struct cpu8080 *cpu, uint8_t *reg_x){
+    uint8_t result = *reg_x + 1;
+    flags_test_ZS(&cpu->flags, result);
+    flags_test_H(&cpu->flags, *reg_x, 1, 0);
+    flags_test_V(&cpu->flags, *reg_x, 1);
+    cpu->flags.n = 0;
+    *reg_x = result;
+}
+
+void instruction_dec(struct cpu8080 *cpu, uint8_t *reg_x){
+    uint8_t result = *reg_x + ~1 + 1;
+    flags_test_ZS(&cpu->flags, result);
+    flags_test_H(&cpu->flags, *reg_x, ~1, 1);
+    cpu->flags.h = !cpu->flags.h;
+    flags_test_V(&cpu->flags, *reg_x, ~1 + 1);
+    cpu->flags.n = 1;
+    *reg_x = result;
+}
+
 void instruction_add(struct cpu8080 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + reg_x;
     flags_test_V(&cpu->flags, cpu->reg_A, reg_x);
@@ -344,6 +348,7 @@ void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x){
 
     flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x) + 1);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, 1);
+    cpu->flags.h = !cpu->flags.h;
     flags_test_ZS(&cpu->flags, result);
     cpu->flags.cy = ~(cpu->flags.cy) & 0x01;
     cpu->flags.n = 1;
@@ -363,6 +368,7 @@ void instruction_sbc(struct cpu8080 *cpu, uint8_t reg_x){
     //NOTE: if this doesnt pass tests, try adding the borrow to cpu->reg_A instead
     flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x) + borrow);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, borrow);
+    cpu->flags.h = !cpu->flags.h;
     flags_test_ZS(&cpu->flags, result);
     cpu->flags.cy = ~cpu->flags.cy & 0x01;
     cpu->flags.n = 1;
@@ -377,6 +383,7 @@ void instruction_cmp(struct cpu8080 *cpu, uint8_t reg_x){
     if(~(cpu->reg_A ^ result ^ reg_x) & 0x10){
         cpu->flags.h = 1;
     }
+    cpu->flags.h = !cpu->flags.h;
     flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x)+1);
     flags_test_ZS(&cpu->flags, (uint8_t) result);
     cpu->flags.n = 1;

@@ -14,8 +14,6 @@ void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode);
 
 void instruction_ld(struct cpu8080 *cpu, uint8_t opcode);
 
-void instruction_inc_8(struct cpu8080 *cpu, uint8_t *reg_x, bool dec);
-
 void instruction_res_set(struct cpu8080 *cpu, uint8_t opcode, bool bit_state);
 
 void instruction_bit(struct cpu8080 *cpu, uint8_t opcode);
@@ -33,6 +31,10 @@ void instruction_rr(struct cpu8080 *cpu, uint8_t *reg_x);
 void instruction_rlc(struct cpu8080 *cpu, uint8_t *reg_x);
 
 void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x);
+
+void instruction_inc(struct cpu8080 *cpu, uint8_t *reg_x);
+
+void instruction_dec(struct cpu8080 *cpu, uint8_t *reg_x);
 
 void instruction_add(struct cpu8080 *cpu, uint8_t reg_x);
 
