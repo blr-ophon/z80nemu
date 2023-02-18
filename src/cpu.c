@@ -44,12 +44,6 @@ void cpu_cycle(Cpu8080 *cpu){
     cpu->step_count++;
 }
 
-static inline bool overflow(int bit_no, uint16_t a, uint16_t b, bool cy) {
-  int32_t result = a + b + cy;
-  int32_t carry = result ^ a ^ b;
-  return carry & (1 << bit_no);
-}
-
 void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
     switch(*opcode){
         case 0x00: //NOP
@@ -1449,6 +1443,22 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
         case 0x23: //INC IX/Y
             (*ix_or_iy) ++;
             break;
+        case 0x24: //INC IX/Yh
+            {
+            uint8_t reg = ((*ix_or_iy) >> 8);
+            instruction_inc(cpu, &reg);
+            (*ix_or_iy) &= 0x00ff;
+            (*ix_or_iy) |= (uint16_t) (reg << 8);
+            break;
+            }
+        case 0x25: //DEC IX/Yh
+            {
+            uint8_t reg = ((*ix_or_iy) >> 8);
+            instruction_dec(cpu, &reg);
+            (*ix_or_iy) &= 0x00ff;
+            (*ix_or_iy) |= (uint16_t) (reg << 8);
+            break;
+            }
         case 0x29: //ADD IX/Y,IX/Y
             instruction_IXIY_add(&cpu->flags, ix_or_iy, *ix_or_iy);
             break;
@@ -1461,6 +1471,22 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
         case 0x2b: //DEC IX/Y
             (*ix_or_iy) --;
             break;
+        case 0x2c: //INC IX/Yl
+            {
+            uint8_t reg = (*ix_or_iy);
+            instruction_inc(cpu, &reg);
+            (*ix_or_iy) &= 0xff00;
+            (*ix_or_iy) |= reg; 
+            break;
+            }
+        case 0x2d: //DEC IX/Yl
+            {
+            uint8_t reg = (*ix_or_iy);
+            instruction_dec(cpu, &reg);
+            (*ix_or_iy) &= 0xff00;
+            (*ix_or_iy) |= reg; 
+            break;
+            }
         case 0x34: //INC (IX/Y+d)
             {
             uint16_t adr = *ix_or_iy + (int8_t)memory_read8(cpu->memory, ++cpu->PC);
