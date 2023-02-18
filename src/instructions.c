@@ -106,12 +106,18 @@ void instruction_ld(struct cpu8080 *cpu, uint8_t opcode){
     *targetPtr = *sourcePtr;
 }
 
-void instruction_inc_8(struct cpu8080 *cpu, uint8_t *reg_x, int8_t addend){
-    assert(addend == 1 || addend == -1);
-    cpu->flags.n = addend == 1? 0 : 1;
-    flags_test_V(&cpu->flags, *reg_x, addend);
-    flags_test_H(&cpu->flags, *reg_x, addend, 0);
-    (*reg_x) += addend;
+void instruction_inc_8(struct cpu8080 *cpu, uint8_t *reg_x, bool dec){
+    cpu->flags.n = dec == 1? 1 : 0;
+    uint8_t test_val = 1;
+    if(dec){
+        flags_test_H(&cpu->flags, *reg_x, ~test_val, 1);
+        cpu->flags.p = *reg_x == 0x80? 1 : 0;
+        (*reg_x) --;
+    }else{
+        flags_test_H(&cpu->flags, *reg_x, 1, 0);
+        cpu->flags.p = *reg_x == 0x7f? 1 : 0;
+        (*reg_x) ++;
+    }
     flags_test_ZS(&cpu->flags, *reg_x);
 }
 
