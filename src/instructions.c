@@ -347,21 +347,16 @@ void instruction_adc(struct cpu8080 *cpu, uint8_t reg_x){
 }
 
 void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x){
-    uint16_t result = cpu->reg_A + ~(reg_x) + 1;
+    uint16_t result = cpu->reg_A + (uint16_t)~(reg_x) + 1;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, 1);
     //cpu->flags.h = !cpu->flags.h;
     flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x) + 1);
 
-    /*
-    cpu->flags.cy = 0;
+    cpu->flags.cy = 1;
     if((result ^ cpu->reg_A ^ ~reg_x) & 0x0100){ 
-        cpu->flags.cy = 1;
+        cpu->flags.cy = 0;
     }
-    cpu->flags.cy = ~(cpu->flags.cy) & 0x01;
-    */
-
-    cpu->flags.cy = overflow(8, cpu->reg_A, ~reg_x, 1)? 0 : 1;
     cpu->flags.n = 1;
 
     cpu->reg_A = result;
@@ -370,19 +365,16 @@ void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x){
 
 void instruction_sbc(struct cpu8080 *cpu, uint8_t reg_x){
     uint8_t borrow = ~(cpu->flags.cy) & 0x01;
-    uint16_t result = cpu->reg_A + ~reg_x + borrow;
+    uint16_t result = cpu->reg_A + (uint16_t)~reg_x + borrow;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, borrow);
     //cpu->flags.h = !cpu->flags.h;
     flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x) + borrow);
 
-    /*
     cpu->flags.cy = 1;
     if((result ^ cpu->reg_A ^ ~reg_x) & 0x0100){ 
         cpu->flags.cy = 0;
     }
-    */
-    cpu->flags.cy = overflow(8, cpu->reg_A, ~reg_x, borrow)? 0 : 1;
     cpu->flags.n = 1;
     
     cpu->reg_A = result;

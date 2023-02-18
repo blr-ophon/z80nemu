@@ -29,6 +29,7 @@ void cpu_init(Cpu8080 *cpu, Memory *memory){
     //memset(used_opcodes, 0xff, sizeof(used_opcodes)); //USED in DEBUG log
     cpu->step_count = 0; //should be cycle count
     cpu->memory = memory;
+    //TODO: custom PC initialization
     cpu->PC = 0x0100;
 }
 
@@ -1651,7 +1652,6 @@ void instruction_misc_sbc(struct cpu8080 *cpu, uint16_t reg_x){
     write_reg_HL(cpu, result);
 }
 
-
 void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
     switch(opcode){
         case 0x40: //IN B,(c)
@@ -1671,10 +1671,20 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             break;
             }
         case 0x44: //NEG
-                   //TODO: All flags should be tested here
-            cpu->reg_A = -cpu->reg_A;
-            flags_test_V(&cpu->flags, 0, cpu->reg_A);
+            {
+            uint16_t result = 0 + (uint16_t)~(cpu->reg_A) + 1;
+            flags_test_ZS(&cpu->flags, result);
+            flags_test_H(&cpu->flags, 0, ~(cpu->reg_A), 1);
+            cpu->flags.h = !cpu->flags.h;
+            flags_test_V(&cpu->flags, 0+1, ~(cpu->reg_A));
+            cpu->flags.cy = 1;
+            if((result ^ 0 ^ ~(cpu->reg_A)) & 0x0100){ 
+                cpu->flags.cy = 0;
+            }
+            cpu->flags.n = 1;
+            cpu->reg_A = result;
             break;
+            }
         case 0x45: //RETN
                    //TODO
             break;
