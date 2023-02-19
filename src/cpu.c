@@ -1731,8 +1731,8 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
         case 0x53: //LD (nn),DE
             {
             uint16_t adr = cpu_GetLIWord(cpu);
-            cpu->memory->memory[adr] = cpu->reg_D;
-            cpu->memory->memory[adr+1] = cpu->reg_E;
+            cpu->memory->memory[adr] = cpu->reg_E;
+            cpu->memory->memory[adr+1] = cpu->reg_D;
             break;
             }
         case 0x56: //IM 1
