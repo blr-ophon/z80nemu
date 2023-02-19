@@ -1676,7 +1676,7 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             flags_test_ZS(&cpu->flags, result);
             flags_test_H(&cpu->flags, 0, ~(cpu->reg_A), 1);
             cpu->flags.h = !cpu->flags.h;
-            flags_test_V(&cpu->flags, 0+1, ~(cpu->reg_A));
+            flags_test_V(&cpu->flags, 0, ~(cpu->reg_A), 1);
             cpu->flags.cy = 1;
             if((result ^ 0 ^ ~(cpu->reg_A)) & 0x0100){ 
                 cpu->flags.cy = 0;

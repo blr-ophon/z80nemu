@@ -1,5 +1,14 @@
 #include "flags.h"
 
+void flags_test_V(Flags *flags, uint8_t a, uint8_t b, uint8_t carry){
+    uint16_t result = a + b + carry;
+    uint16_t changes = result ^ a ^ b;
+    flags->p = 0;
+    if(((changes & 0x0100) >> 8) != ((changes & 0x0080) >> 7)){
+        flags->p = 1;
+    }
+}
+/*
 void flags_test_V(Flags *flags, uint8_t a, uint8_t b){
     //TODO: logic for a+b+carry 
     if((a^b) & 0x80){ //if a and b have different sign bits
@@ -13,6 +22,7 @@ void flags_test_V(Flags *flags, uint8_t a, uint8_t b){
         flags->p = diff_sign? 1 : 0;
     }
 }
+*/
 
 void flags_test_V16(Flags *flags, uint16_t a, uint16_t b){
     //TODO: logic for a+b+carry 

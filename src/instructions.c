@@ -300,7 +300,7 @@ void instruction_inc(struct cpu8080 *cpu, uint8_t *reg_x){
     uint8_t result = *reg_x + 1;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, *reg_x, 1, 0);
-    flags_test_V(&cpu->flags, *reg_x, 1);
+    flags_test_V(&cpu->flags, *reg_x, 1, 0);
     cpu->flags.n = 0;
     *reg_x = result;
 }
@@ -310,24 +310,17 @@ void instruction_dec(struct cpu8080 *cpu, uint8_t *reg_x){
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, *reg_x, ~1, 1);
     cpu->flags.h = !cpu->flags.h;
-    flags_test_V(&cpu->flags, *reg_x, ~1 + 1);
+    flags_test_V(&cpu->flags, *reg_x, ~1, 1);
     cpu->flags.n = 1;
     *reg_x = result;
-}
-
-static inline bool overflow(int bit_no, uint16_t a, uint16_t b, bool cy) {
-  int32_t result = a + b + cy;
-  int32_t carry = result ^ a ^ b;
-  return carry & (1 << bit_no);
 }
 
 void instruction_add(struct cpu8080 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + reg_x;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, cpu->reg_A, reg_x, 0);
-    flags_test_V(&cpu->flags, cpu->reg_A, reg_x);
-    //flags_test_C8(&cpu->flags, result);
-    cpu->flags.cy = overflow(8, cpu->reg_A, reg_x, 0)? 1 : 0;
+    flags_test_V(&cpu->flags, cpu->reg_A, reg_x, 0);
+    flags_test_C8(&cpu->flags, result);
     cpu->flags.n = 0;
 
     cpu->reg_A = result;
@@ -338,9 +331,8 @@ void instruction_adc(struct cpu8080 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + reg_x + cpu->flags.cy;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, cpu->reg_A, reg_x, cpu->flags.cy);
-    flags_test_V(&cpu->flags, cpu->reg_A, reg_x + cpu->flags.cy);
-    //flags_test_C8(&cpu->flags, result);
-    cpu->flags.cy = overflow(8, cpu->reg_A, reg_x, cpu->flags.cy)? 1 : 0;
+    flags_test_V(&cpu->flags, cpu->reg_A, reg_x, cpu->flags.cy);
+    flags_test_C8(&cpu->flags, result);
     cpu->flags.n = 0;
 
     cpu->reg_A = result;
@@ -350,8 +342,8 @@ void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + (uint16_t)~(reg_x) + 1;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, 1);
-    //cpu->flags.h = !cpu->flags.h;
-    flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x) + 1);
+    cpu->flags.h = !cpu->flags.h;
+    flags_test_V(&cpu->flags, cpu->reg_A, ~reg_x, 1);
 
     cpu->flags.cy = 1;
     if((result ^ cpu->reg_A ^ ~reg_x) & 0x0100){ 
@@ -365,11 +357,11 @@ void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x){
 
 void instruction_sbc(struct cpu8080 *cpu, uint8_t reg_x){
     uint8_t borrow = ~(cpu->flags.cy) & 0x01;
-    uint16_t result = cpu->reg_A + (uint16_t)~reg_x + borrow;
+    uint16_t result = cpu->reg_A + (uint16_t)~(reg_x) + borrow;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, borrow);
-    //cpu->flags.h = !cpu->flags.h;
-    flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x) + borrow);
+    cpu->flags.h = !cpu->flags.h;
+    flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x), borrow);
 
     cpu->flags.cy = 1;
     if((result ^ cpu->reg_A ^ ~reg_x) & 0x0100){ 
@@ -384,18 +376,6 @@ void instruction_cmp(struct cpu8080 *cpu, uint8_t reg_x){
     uint8_t temp = cpu->reg_A;
     instruction_sub(cpu, reg_x);
     cpu->reg_A = temp;
-    /*
-    uint16_t result = cpu->reg_A - reg_x;
-    cpu->flags.cy = result >> 8;
-    cpu->flags.h = 0;
-    if(~(cpu->reg_A ^ result ^ reg_x) & 0x10){
-        cpu->flags.h = 1;
-    }
-    cpu->flags.h = !cpu->flags.h;
-    flags_test_V(&cpu->flags, cpu->reg_A, ~(reg_x)+1);
-    flags_test_ZS(&cpu->flags, (uint8_t) result);
-    cpu->flags.n = 1;
-    */
 }
 
 void instruction_ana(struct cpu8080 *cpu, uint8_t reg_x){
