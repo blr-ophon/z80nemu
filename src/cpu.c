@@ -1865,20 +1865,15 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             break;
         case 0xa1: //CPI
             {
-            uint8_t subtrahend = PTR_HL;
-            uint8_t result = cpu->reg_A - subtrahend;
-
-            cpu->flags.h = 0;
-            if(~(cpu->reg_A ^ result ^ subtrahend) & 0x10){
-                cpu->flags.h = 1;
-            }
-
-            flags_test_ZS(&cpu->flags, (uint8_t) result);
-            cpu->flags.n = 1;
-
+            const uint8_t subtrahend = PTR_HL;
+            const uint8_t result = cpu->reg_A + ~subtrahend + 1;
+            flags_test_ZS(&cpu->flags, result);
+            flags_test_H(&cpu->flags, cpu->reg_A, ~subtrahend, 1);
+            cpu->flags.h = !cpu->flags.h;
             write_reg_HL(cpu, read_reg_HL(cpu) + 1);
             write_reg_BC(cpu, read_reg_BC(cpu) - 1);
             cpu->flags.p = read_reg_BC(cpu) != 0? 1 : 0;
+            cpu->flags.n = 1;
             break;
             }
         case 0xa2: //INI
@@ -1898,20 +1893,15 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             break;
         case 0xa9: //CPD
             {
-            uint8_t subtrahend = PTR_HL;
-            uint8_t result = cpu->reg_A - subtrahend;
-
-            cpu->flags.h = 0;
-            if(~(cpu->reg_A ^ result ^ subtrahend) & 0x10){
-                cpu->flags.h = 1;
-            }
-
-            flags_test_ZS(&cpu->flags, (uint8_t) result);
-            cpu->flags.n = 1;
-
+            const uint8_t subtrahend = PTR_HL;
+            const uint8_t result = cpu->reg_A + ~subtrahend + 1;
+            flags_test_ZS(&cpu->flags, result);
+            flags_test_H(&cpu->flags, cpu->reg_A, ~subtrahend, 1);
+            cpu->flags.h = !cpu->flags.h;
             write_reg_HL(cpu, read_reg_HL(cpu) - 1);
             write_reg_BC(cpu, read_reg_BC(cpu) - 1);
             cpu->flags.p = read_reg_BC(cpu) != 0? 1 : 0;
+            cpu->flags.n = 1;
             break;
             }
         case 0xaa: //IND
@@ -1937,15 +1927,10 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             {
             uint8_t subtrahend = PTR_HL;
             uint8_t result = cpu->reg_A - subtrahend;
-
-            cpu->flags.h = 0;
-            if(~(cpu->reg_A ^ result ^ subtrahend) & 0x10){
-                cpu->flags.h = 1;
-            }
-
-            flags_test_ZS(&cpu->flags, (uint8_t) result);
+            flags_test_ZS(&cpu->flags, result);
+            flags_test_H(&cpu->flags, cpu->reg_A, ~subtrahend, 1);
+            cpu->flags.h = !cpu->flags.h;
             cpu->flags.n = 1;
-
             write_reg_HL(cpu, read_reg_HL(cpu) + 1);
             write_reg_BC(cpu, read_reg_BC(cpu) - 1);
             cpu->flags.p = read_reg_BC(cpu) != 0? 1 : 0;
@@ -1977,15 +1962,10 @@ void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
             {
             uint8_t subtrahend = PTR_HL;
             uint8_t result = cpu->reg_A - subtrahend;
-
-            cpu->flags.h = 0;
-            if(~(cpu->reg_A ^ result ^ subtrahend) & 0x10){
-                cpu->flags.h = 1;
-            }
-
-            flags_test_ZS(&cpu->flags, (uint8_t) result);
+            flags_test_ZS(&cpu->flags, result);
+            flags_test_H(&cpu->flags, cpu->reg_A, ~subtrahend, 1);
+            cpu->flags.h = !cpu->flags.h;
             cpu->flags.n = 1;
-
             write_reg_HL(cpu, read_reg_HL(cpu) - 1);
             write_reg_BC(cpu, read_reg_BC(cpu) - 1);
             cpu->flags.p = read_reg_BC(cpu) != 0? 1 : 0;
