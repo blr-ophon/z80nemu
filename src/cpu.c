@@ -1438,7 +1438,8 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
         case 0x22: //LD (nn),IX/Y
             {
             uint16_t adr = cpu_GetLIWord(cpu);
-            cpu->memory->memory[adr] = *ix_or_iy;
+            cpu->memory->memory[adr] = *ix_or_iy; 
+            cpu->memory->memory[adr+1] = (*ix_or_iy & 0xff00) >> 8;
             break;
             }
         case 0x23: //INC IX/Y
@@ -1466,7 +1467,9 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
         case 0x2a: //LD IX/Y,(nn)
             {
             uint16_t adr = cpu_GetLIWord(cpu);
-            *ix_or_iy = cpu->memory->memory[adr];
+            *ix_or_iy = 0;
+            *ix_or_iy |= cpu->memory->memory[adr];
+            *ix_or_iy |= (uint16_t)(cpu->memory->memory[adr+1]) << 8;
             break;
             }
         case 0x2b: //DEC IX/Y
