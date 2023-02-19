@@ -80,7 +80,7 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode);
 
 void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode);
 
-void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t opcode, bool iy_mode);
+void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t *opcode, uint8_t d_operand, bool iy_mode);
 
 void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode);
 

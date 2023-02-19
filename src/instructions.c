@@ -2,12 +2,9 @@
 #include "cpu.h"
 //TODO: fix function head parameter names. reg_x is confusing now
 
-void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_state, bool iy_mode){
+void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_state, uint8_t *ixy_operand){
     //instruction format: 00bbbrrr, to set/reset bit b of (ix/y +d) and store in register r 
-    uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
-    uint16_t adr = *ix_or_iy + (int16_t)memory_read8(cpu->memory, ++cpu->PC);
-    uint8_t temp = cpu->memory->memory[adr];
-
+    uint8_t temp = *ixy_operand;
     uint8_t bit_pos = (opcode & 0x38) >> 3; 
     if(bit_state){
         temp |= (uint8_t) 0x01 << bit_pos;
@@ -23,18 +20,16 @@ void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_stat
         &cpu->reg_E,
         &cpu->reg_H,
         &cpu->reg_L,
-        &cpu->memory->memory[adr],
+        ixy_operand,
         &cpu->reg_A
     };
     *(regsPtrs[reg]) = temp;
 }
 
-void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
+void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, uint8_t *ixy_operand){
     //instruction format: 00bbbrrr, to test bit b of register r. In this case,
     //r is always (IX/Y + d), given in reg_x 
-    uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
-    uint16_t adr = (*ix_or_iy) + (int16_t)memory_read8(cpu->memory, ++cpu->PC);
-    uint8_t tested_reg = cpu->memory->memory[adr];
+    uint8_t tested_reg = *ixy_operand;
 
     uint8_t bit_pos = (opcode & 0x38) >> 3; 
     if((tested_reg >> bit_pos) & 0x01){
@@ -46,7 +41,6 @@ void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
 
 void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
     //instruction format: 01RRRrrr, store contents of r to R 
-    //
     uint8_t reg1 = (opcode & 0x38) >> 3;
     uint8_t reg2 = opcode & 0x07;
     uint16_t adr = 0;
