@@ -40,7 +40,7 @@ void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
     //instruction format: 01RRRrrr, store contents of r to R 
     //
     uint8_t reg1 = (opcode & 0x38) >> 3;
-    uint8_t reg2 = opcode & 0x03;
+    uint8_t reg2 = opcode & 0x07;
     uint16_t adr = 0;
 
     //create a copy of IX or IY in separate 8 bit registers
@@ -55,13 +55,13 @@ void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
         &cpu->reg_E,
         &reg_IXYH,
         &reg_IXYL,
-        NULL,
+        NULL, //no need to fetch this when (ix/y + d) is not an operand
         &cpu->reg_A
     };
 
-    //exceptional cases (documented instructions)
-    if(reg1 == 6 || reg2 == 6){
-        adr = (*ix_or_iy) + memory_read8(cpu->memory, ++cpu->PC);
+    //(ix/y + d) is an operand. ixyh and ixyl become H and L
+    if(reg1 == 0x6 || reg2 == 0x6){ 
+        adr = (*ix_or_iy) + (int16_t) memory_read8(cpu->memory, ++cpu->PC);
         regsPtrs[6] = &cpu->memory->memory[adr];
         regsPtrs[5] = &cpu->reg_L;
         regsPtrs[4] = &cpu->reg_H;
@@ -73,7 +73,7 @@ void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
     *targetPtr = *sourcePtr;
 
     //load modified copy back to IX or IY register
-    (*ix_or_iy) = ((reg_IXYH) << 8) | (reg_IXYL);
+    (*ix_or_iy) = ((uint16_t)(reg_IXYH) << 8) | (reg_IXYL);
 }
 
 void instruction_ld(struct cpu8080 *cpu, uint8_t opcode){
@@ -83,7 +83,7 @@ void instruction_ld(struct cpu8080 *cpu, uint8_t opcode){
     //but instead is HALT
     //
     uint8_t reg1 = (opcode & 0x38) >> 3;
-    uint8_t reg2 = opcode & 0x03;
+    uint8_t reg2 = opcode & 0x07;
 
     uint16_t adr = 0;
     if(reg1 == 6 || reg2 == 6){
