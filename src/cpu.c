@@ -1461,6 +1461,10 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
             (*ix_or_iy) |= (uint16_t) (reg << 8);
             break;
             }
+        case 0x26: //LD IX/Yh,n
+            (*ix_or_iy) &= 0x00ff;
+            (*ix_or_iy) |= (uint16_t)memory_read8(cpu->memory, ++cpu->PC) << 8;
+            break;
         case 0x29: //ADD IX/Y,IX/Y
             instruction_IXIY_add(&cpu->flags, ix_or_iy, *ix_or_iy);
             break;
@@ -1491,6 +1495,10 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
             (*ix_or_iy) |= reg; 
             break;
             }
+        case 0x2e: //LD IX/Yl,n
+            (*ix_or_iy) &= 0xff00;
+            (*ix_or_iy) |= memory_read8(cpu->memory, ++cpu->PC);
+            break;
         case 0x34: //INC (IX/Y+d)
             {
             uint16_t adr = *ix_or_iy + (int8_t)memory_read8(cpu->memory, ++cpu->PC);
@@ -1617,13 +1625,13 @@ void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t opcode, bool iy_mode){
             instruction_srl(cpu, &cpu->memory->memory[adr]);
             break;
         case 0x40 ... 0x7f: //BIT x,(IX/Y + d)
-            instruction_bit_IXIY(cpu, opcode, (*ix_or_iy));
+            instruction_bit_IXIY(cpu, opcode, iy_mode);
             break;
         case 0x80 ... 0xbf: //RES x,(IX/Y + d)
-            instruction_res_set_IXIY(cpu, opcode, 0, adr);
+            instruction_res_set_IXIY(cpu, opcode, 0, iy_mode);
             break;
-        case 0xc0 ... 0xff: //RES x,(IX/Y + d)
-            instruction_res_set_IXIY(cpu, opcode, 1, adr);
+        case 0xc0 ... 0xff: //SET x,(IX/Y + d)
+            instruction_res_set_IXIY(cpu, opcode, 1, iy_mode);
             break;
     }
 }

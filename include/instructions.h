@@ -6,9 +6,9 @@
 
 struct cpu8080;
 
-void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_state, uint16_t adr);
+void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_state, bool iy_mode);
 
-void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, uint8_t reg_x);
+void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode);
 
 void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode);
 

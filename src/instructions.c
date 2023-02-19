@@ -2,13 +2,17 @@
 #include "cpu.h"
 //TODO: fix function head parameter names. reg_x is confusing now
 
-void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_state, uint16_t adr){
-    //instruction format: 00bbbrrr, to set/reset bit b of register r 
+void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_state, bool iy_mode){
+    //instruction format: 00bbbrrr, to set/reset bit b of (ix/y +d) and store in register r 
+    uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
+    uint16_t adr = *ix_or_iy + (int16_t)memory_read8(cpu->memory, ++cpu->PC);
+    uint8_t temp = cpu->memory->memory[adr];
+
     uint8_t bit_pos = (opcode & 0x38) >> 3; 
     if(bit_state){
-        cpu->memory->memory[adr] |= (uint8_t) bit_state << bit_pos;
+        temp |= (uint8_t) 0x01 << bit_pos;
     }else{
-        cpu->memory->memory[adr] &= ~((uint8_t) bit_state << bit_pos);
+        temp &= ~((uint8_t) 0x01 << bit_pos);
     }
 
     uint8_t reg = opcode & 0x07; 
@@ -22,14 +26,18 @@ void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_stat
         &cpu->memory->memory[adr],
         &cpu->reg_A
     };
-    *(regsPtrs[reg]) = cpu->memory->memory[adr]; 
+    *(regsPtrs[reg]) = temp;
 }
 
-void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, uint8_t reg_x){
+void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
     //instruction format: 00bbbrrr, to test bit b of register r. In this case,
     //r is always (IX/Y + d), given in reg_x 
+    uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
+    uint16_t adr = (*ix_or_iy) + (int16_t)memory_read8(cpu->memory, ++cpu->PC);
+    uint8_t tested_reg = cpu->memory->memory[adr];
+
     uint8_t bit_pos = (opcode & 0x38) >> 3; 
-    if((reg_x >> bit_pos) & 0x01){
+    if((tested_reg >> bit_pos) & 0x01){
         cpu->flags.z = 0;
     } else cpu->flags.z = 1;
     cpu->flags.n = 0;
@@ -138,9 +146,9 @@ void instruction_res_set(struct cpu8080 *cpu, uint8_t opcode, bool bit_state){
             break;
     }
     if(bit_state){
-        *regPtr |= (uint8_t) bit_state << bit_pos;
+        *regPtr |= (uint8_t) 0x01 << bit_pos;
     }else{
-        *regPtr &= ~((uint8_t) bit_state << bit_pos);
+        *regPtr &= ~((uint8_t) 0x01 << bit_pos);
     }
 }
 
