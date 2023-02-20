@@ -238,7 +238,6 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             break;
         case 0x27: //DAA 
             {
-            bool cy = cpu->flags.cy;
             uint8_t correction = 0;
 
             uint8_t ls_nibble = cpu->reg_A & 0x0f;
@@ -249,11 +248,18 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             uint8_t ms_nibble = cpu->reg_A & 0xf0;
             if((ms_nibble > 0x90) || cpu->flags.cy || (ms_nibble >= 0x90 && ls_nibble > 9)){
                 correction += 0x60;
-                cy = 1; //if no overflow, remais unchanged, not reset
+                cpu->flags.cy = 1; //if no overflow, remais unchanged, not reset
             }
-            
-            instruction_add(cpu, correction);
-            cpu->flags.cy = cy;
+
+            if(cpu->flags.n){
+                cpu->flags.h = cpu->flags.h && (cpu->reg_A & 0x0F) < 0x06;
+                cpu->reg_A  -= correction;
+            }else{
+                cpu->flags.h = (cpu->reg_A & 0x0F) > 0x09;
+                cpu->reg_A += correction;
+              }
+            flags_test_ZS(&cpu->flags, cpu->reg_A);
+            flags_test_P(&cpu->flags, cpu->reg_A);
             break;
             }
         case 0x28: //JR Z,d
@@ -330,6 +336,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->memory->memory[read_reg_HL(cpu)] = memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x37: //SCF
+            cpu->flags.h = 0;
             cpu->flags.n = 0;
             cpu->flags.cy = 1;
             break;
@@ -368,9 +375,9 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
             cpu->reg_A = memory_read8(cpu->memory, ++cpu->PC);
             break;
         case 0x3f: //CCF
-            cpu->flags.n = 0;
             cpu->flags.h = cpu->flags.cy;
-            cpu->flags.cy = ~cpu->flags.cy;
+            cpu->flags.n = 0;
+            cpu->flags.cy = !cpu->flags.cy;
             break;
         case 0x40: //LD B,B 
             //TODO: use instruction_ld from here onwards
@@ -1547,6 +1554,10 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
         case 0x40 ... 0x7f: //LD reg1,reg2 
             instruction_ld_IXIY(cpu, *opcode, iy_mode);
             break;
+        case 0x80 ... 0xbf: //ALUOP A,reg
+            instruction_aluop_IXIY(cpu, *opcode, iy_mode);
+            break;
+        /*
         case 0x86: //ADD A,(IX/Y+d)
             {
             uint16_t adr = *ix_or_iy + (int16_t)memory_read8(cpu->memory, ++cpu->PC);
@@ -1595,6 +1606,7 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
             instruction_cmp(cpu, cpu->memory->memory[adr]); 
             break;
             }
+        */
         case 0xcb: //PREFIX: IX/Y BIT INSTRUCTIONS
             {
             uint8_t d_operand = memory_read8(cpu->memory, ++cpu->PC);

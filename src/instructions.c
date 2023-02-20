@@ -39,6 +39,48 @@ void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, uint8_t *ixy_oper
     cpu->flags.h = 1;
 }
 
+void instruction_aluop_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
+    //instruction format: 01RRRrrr. r is operand, R is operation;
+    uint8_t operationIndex = (opcode & 0x38) >> 3;
+    uint8_t operand = opcode & 0x07;
+
+    //create a copy of IX or IY in separate 8 bit registers
+    uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
+    uint8_t reg_IXYH = ((*ix_or_iy) & 0xff00) >> 8;
+    uint8_t reg_IXYL = (*ix_or_iy);
+
+    uint8_t *regsPtrs[] = {
+        &cpu->reg_B,
+        &cpu->reg_C,
+        &cpu->reg_D,
+        &cpu->reg_E,
+        &reg_IXYH,
+        &reg_IXYL,
+        NULL, //no need to fetch, increment PC, when ix/y+d is not an operand
+        &cpu->reg_A
+    };
+    if(operand == 0x6){ 
+        uint16_t adr = (*ix_or_iy) + (int16_t) memory_read8(cpu->memory, ++cpu->PC);
+        regsPtrs[6] = &cpu->memory->memory[adr];
+    }
+
+    void(*operations[])(struct cpu8080 *cpu, uint8_t reg_x) = {
+        instruction_add,
+        instruction_adc,
+        instruction_sub,
+        instruction_sbc,
+        instruction_ana,
+        instruction_xra,
+        instruction_ora,
+        instruction_cmp
+    };
+
+    operations[operationIndex](cpu, *regsPtrs[operand]);
+
+    //load modified copy back to IX or IY register
+    (*ix_or_iy) = ((uint16_t)(reg_IXYH) << 8) | (reg_IXYL);
+}
+
 void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
     //instruction format: 01RRRrrr, store contents of r to R 
     uint8_t reg1 = (opcode & 0x38) >> 3;
