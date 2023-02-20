@@ -1377,6 +1377,30 @@ void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
         case 0x2f: //SRA A
             instruction_sra(cpu, &cpu->reg_A);
             break;
+        case 0x30: //SLL B
+            instruction_sll(cpu, &cpu->reg_B);
+            break;
+        case 0x31: //SLL C
+            instruction_sll(cpu, &cpu->reg_C);
+            break;
+        case 0x32: //SLL D
+            instruction_sll(cpu, &cpu->reg_D);
+            break;
+        case 0x33: //SLL E
+            instruction_sll(cpu, &cpu->reg_E);
+            break;
+        case 0x34: //SLL H
+            instruction_sll(cpu, &cpu->reg_H);
+            break;
+        case 0x35: //SLL L
+            instruction_sll(cpu, &cpu->reg_L);
+            break;
+        case 0x36: //SLL (HL)
+            instruction_sll(cpu, &PTR_HL);
+            break;
+        case 0x37: //SLL A
+            instruction_sll(cpu, &cpu->reg_A);
+            break;
         case 0x38: //SRL B
             instruction_srl(cpu, &cpu->reg_B);
             break;
@@ -1607,21 +1631,32 @@ void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t *opcode, uint8_t d_operand,
     switch(*opcode){
         case 0x06: //RLC (IX/Y+d)
             instruction_rlc(cpu, ixy_operand);
+            flags_test_ZS(&cpu->flags, *ixy_operand);
+            flags_test_P(&cpu->flags, *ixy_operand);
             break;
         case 0x0e: //RRC (IX/Y+d)
             instruction_rrc(cpu, ixy_operand);
+            flags_test_ZS(&cpu->flags, *ixy_operand);
+            flags_test_P(&cpu->flags, *ixy_operand);
             break;
         case 0x16: //RL (IX/Y+d)
             instruction_rl(cpu, ixy_operand);
+            flags_test_ZS(&cpu->flags, *ixy_operand);
+            flags_test_P(&cpu->flags, *ixy_operand);
             break;
         case 0x1e: //RR (IX/Y+d)
             instruction_rr(cpu, ixy_operand);
+            flags_test_ZS(&cpu->flags, *ixy_operand);
+            flags_test_P(&cpu->flags, *ixy_operand);
             break;
         case 0x26: //SLA (IX/Y+d)
             instruction_sla(cpu, ixy_operand);
             break;
         case 0x2e: //SRA (IX/Y+d)
             instruction_sra(cpu, ixy_operand);
+            break;
+        case 0x36: //SLL (IX/Y+d)
+            instruction_sll(cpu, ixy_operand);
             break;
         case 0x3e: //SRL (IX/Y+d)
             instruction_srl(cpu, ixy_operand);

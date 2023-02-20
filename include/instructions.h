@@ -20,6 +20,8 @@ void instruction_bit(struct cpu8080 *cpu, uint8_t opcode);
 
 void instruction_sla(struct cpu8080 *cpu, uint8_t *reg_x);
 
+void instruction_sll(struct cpu8080 *cpu, uint8_t *reg_x);
+
 void instruction_sra(struct cpu8080 *cpu, uint8_t *reg_x);
 
 void instruction_srl(struct cpu8080 *cpu, uint8_t *reg_x);

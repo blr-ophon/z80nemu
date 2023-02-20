@@ -196,29 +196,32 @@ void instruction_sla(struct cpu8080 *cpu, uint8_t *reg_x){
     cpu->flags.n = 0;
     cpu->flags.h = 0;
     flags_test_ZS(&cpu->flags, *reg_x);
+    flags_test_P(&cpu->flags, *reg_x);
 }
 
-void instruction_sra(struct cpu8080 *cpu, uint8_t *reg_x){
-    //convert to signed to shift right arithmetically
-    int8_t temp = *reg_x;
-    uint8_t bit0 = temp & 0x01;
-    temp >>= 1;
+void instruction_sll(struct cpu8080 *cpu, uint8_t *reg_x){
+    uint8_t bit7 = *reg_x & 0x80;
+    *reg_x <<= 1;
 
-    if(bit0){
+    if(bit7){
         cpu->flags.cy = 1;
     }else{
         cpu->flags.cy = 0;
     }
+    *reg_x |= 0x01;
     cpu->flags.n = 0;
     cpu->flags.h = 0;
-    flags_test_ZS(&cpu->flags, temp);
-    *reg_x = temp;
+    flags_test_ZS(&cpu->flags, *reg_x);
+    flags_test_P(&cpu->flags, *reg_x);
 }
 
-void instruction_srl(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_sra(struct cpu8080 *cpu, uint8_t *reg_x){
+    //convert to signed to shift right arithmetically
+    uint8_t bit7 = *reg_x & 0x80;
     uint8_t bit0 = *reg_x & 0x01;
     *reg_x >>= 1;
-    //reg_x is unsigned, so right shift is logic
+    if(bit7) *reg_x |= 0x80;
+    else {*reg_x &= ~0x80;}
 
     if(bit0){
         cpu->flags.cy = 1;
@@ -228,6 +231,22 @@ void instruction_srl(struct cpu8080 *cpu, uint8_t *reg_x){
     cpu->flags.n = 0;
     cpu->flags.h = 0;
     flags_test_ZS(&cpu->flags, *reg_x);
+    flags_test_P(&cpu->flags, *reg_x);
+}
+
+void instruction_srl(struct cpu8080 *cpu, uint8_t *reg_x){
+    uint8_t bit0 = *reg_x & 0x01;
+    *reg_x >>= 1;
+
+    if(bit0){
+        cpu->flags.cy = 1;
+    }else{
+        cpu->flags.cy = 0;
+    }
+    cpu->flags.n = 0;
+    cpu->flags.h = 0;
+    flags_test_ZS(&cpu->flags, *reg_x);
+    flags_test_P(&cpu->flags, *reg_x);
 }
 
 void instruction_rl(struct cpu8080 *cpu, uint8_t *reg_x){
@@ -245,7 +264,6 @@ void instruction_rl(struct cpu8080 *cpu, uint8_t *reg_x){
         cpu->flags.cy = 0;
     }
     cpu->flags.n = 0;
-    //NOTE: this flag is unaffected in 8080
     cpu->flags.h = 0;
 }
 
@@ -264,7 +282,6 @@ void instruction_rr(struct cpu8080 *cpu, uint8_t *reg_x){
         cpu->flags.cy = 0;
     }
     cpu->flags.n = 0;
-    //NOTE: this flag is unaffected in 8080
     cpu->flags.h = 0;
 }
 
@@ -279,7 +296,6 @@ void instruction_rlc(struct cpu8080 *cpu, uint8_t *reg_x){
         *reg_x &= ~0x01;
     }
     cpu->flags.n = 0;
-    //NOTE: this flag is unaffected in 8080
     cpu->flags.h = 0;
 }
 
@@ -294,7 +310,6 @@ void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x){
         *reg_x &= ~0x80;
     }
     cpu->flags.n = 0;
-    //NOTE: this flag is unaffected in 8080
     cpu->flags.h = 0;
 }
 
