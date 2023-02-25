@@ -2,19 +2,19 @@
 #define REGISTERBANK_H
 #include <stdint.h>
 
-typedef struct cpu8080 Cpu8080;
+typedef struct cpuz80 Cpuz80;
 
 
-void write_reg_BC(Cpu8080 *cpu, uint16_t value);
+void write_reg_BC(Cpuz80 *cpu, uint16_t value);
 
-uint16_t read_reg_BC(Cpu8080 *cpu);
+uint16_t read_reg_BC(Cpuz80 *cpu);
 
-void write_reg_DE(Cpu8080 *cpu, uint16_t value);
+void write_reg_DE(Cpuz80 *cpu, uint16_t value);
 
-uint16_t read_reg_DE(Cpu8080 *cpu);
+uint16_t read_reg_DE(Cpuz80 *cpu);
 
-void write_reg_HL(Cpu8080 *cpu, uint16_t value);
+void write_reg_HL(Cpuz80 *cpu, uint16_t value);
 
-uint16_t read_reg_HL(Cpu8080 *cpu);
+uint16_t read_reg_HL(Cpuz80 *cpu);
 
 #endif

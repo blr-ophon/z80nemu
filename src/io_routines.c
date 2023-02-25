@@ -7,7 +7,7 @@
 //byte (c) as address, giving it 256 possibilities. In hardware, this means the 
 //upper 8 address pins are not connected at all to IO chips.
 
-void io_routines_IN(struct cpu8080 *cpu, uint8_t *reg_x){
+void io_routines_IN(struct cpuz80 *cpu, uint8_t *reg_x){
     //Instruction is executed in two parts. 
     //
     //In the first one it sends the address to address bus and sets proper 
@@ -49,7 +49,7 @@ void io_routines_IN(struct cpu8080 *cpu, uint8_t *reg_x){
     flags_test_ZS(&cpu->flags, *reg_x);
 }
 
-void io_routines_OUT(struct cpu8080 *cpu, uint8_t *reg_x){
+void io_routines_OUT(struct cpuz80 *cpu, uint8_t *reg_x){
     //Instruction is executed in two parts. 
     //
     //In the first one, it sets the proper flags and latches the byte in

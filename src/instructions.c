@@ -2,7 +2,7 @@
 #include "cpu.h"
 //TODO: fix function head parameter names. reg_x is confusing now
 
-void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_state, uint8_t *ixy_operand){
+void instruction_res_set_IXIY(struct cpuz80 *cpu, uint8_t opcode, bool bit_state, uint8_t *ixy_operand){
     //instruction format: 00bbbrrr, to set/reset bit b of (ix/y +d) and store in register r 
     uint8_t temp = *ixy_operand;
     uint8_t bit_pos = (opcode & 0x38) >> 3; 
@@ -26,7 +26,7 @@ void instruction_res_set_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool bit_stat
     *(regsPtrs[reg]) = temp;
 }
 
-void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, uint8_t *ixy_operand){
+void instruction_bit_IXIY(struct cpuz80 *cpu, uint8_t opcode, uint8_t *ixy_operand){
     //instruction format: 00bbbrrr, to test bit b of register r. In this case,
     //r is always (IX/Y + d), given in reg_x 
     uint8_t tested_reg = *ixy_operand;
@@ -39,7 +39,7 @@ void instruction_bit_IXIY(struct cpu8080 *cpu, uint8_t opcode, uint8_t *ixy_oper
     cpu->flags.h = 1;
 }
 
-void instruction_aluop_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
+void instruction_aluop_IXIY(struct cpuz80 *cpu, uint8_t opcode, bool iy_mode){
     //instruction format: 01RRRrrr. r is operand, R is operation;
     uint8_t operationIndex = (opcode & 0x38) >> 3;
     uint8_t operand = opcode & 0x07;
@@ -64,7 +64,7 @@ void instruction_aluop_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
         regsPtrs[6] = &cpu->memory->memory[adr];
     }
 
-    void(*operations[])(struct cpu8080 *cpu, uint8_t reg_x) = {
+    void(*operations[])(struct cpuz80 *cpu, uint8_t reg_x) = {
         instruction_add,
         instruction_adc,
         instruction_sub,
@@ -81,7 +81,7 @@ void instruction_aluop_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
     (*ix_or_iy) = ((uint16_t)(reg_IXYH) << 8) | (reg_IXYL);
 }
 
-void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
+void instruction_ld_IXIY(struct cpuz80 *cpu, uint8_t opcode, bool iy_mode){
     //instruction format: 01RRRrrr, store contents of r to R 
     uint8_t reg1 = (opcode & 0x38) >> 3;
     uint8_t reg2 = opcode & 0x07;
@@ -120,7 +120,7 @@ void instruction_ld_IXIY(struct cpu8080 *cpu, uint8_t opcode, bool iy_mode){
     (*ix_or_iy) = ((uint16_t)(reg_IXYH) << 8) | (reg_IXYL);
 }
 
-void instruction_ld(struct cpu8080 *cpu, uint8_t opcode){
+void instruction_ld(struct cpuz80 *cpu, uint8_t opcode){
     //instruction format: 01RRRrrr, store contents of r to R 
     //
     //IMPORTANT: Doesnt work with opcode 0x76, which would be LD (HL),(HL),
@@ -150,7 +150,7 @@ void instruction_ld(struct cpu8080 *cpu, uint8_t opcode){
     *targetPtr = *sourcePtr;
 }
 
-void instruction_res_set(struct cpu8080 *cpu, uint8_t opcode, bool bit_state){
+void instruction_res_set(struct cpuz80 *cpu, uint8_t opcode, bool bit_state){
     //instruction format: 00bbbrrr, to set/reset bit b of register r 
     uint8_t bit_pos = (opcode & 0x38) >> 3; 
     uint8_t reg = opcode & 0x07; 
@@ -188,7 +188,7 @@ void instruction_res_set(struct cpu8080 *cpu, uint8_t opcode, bool bit_state){
     }
 }
 
-void instruction_bit(struct cpu8080 *cpu, uint8_t opcode){
+void instruction_bit(struct cpuz80 *cpu, uint8_t opcode){
     //instruction format: 00bbbrrr, to test bit b of register r 
     uint8_t bit_pos = (opcode & 0x38) >> 3; 
     uint8_t reg = opcode & 0x07; 
@@ -226,7 +226,7 @@ void instruction_bit(struct cpu8080 *cpu, uint8_t opcode){
     cpu->flags.h = 1;
 }
 
-void instruction_sla(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_sla(struct cpuz80 *cpu, uint8_t *reg_x){
     uint8_t bit7 = *reg_x & 0x80;
     *reg_x <<= 1;
 
@@ -241,7 +241,7 @@ void instruction_sla(struct cpu8080 *cpu, uint8_t *reg_x){
     flags_test_P(&cpu->flags, *reg_x);
 }
 
-void instruction_sll(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_sll(struct cpuz80 *cpu, uint8_t *reg_x){
     uint8_t bit7 = *reg_x & 0x80;
     *reg_x <<= 1;
 
@@ -257,7 +257,7 @@ void instruction_sll(struct cpu8080 *cpu, uint8_t *reg_x){
     flags_test_P(&cpu->flags, *reg_x);
 }
 
-void instruction_sra(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_sra(struct cpuz80 *cpu, uint8_t *reg_x){
     //convert to signed to shift right arithmetically
     uint8_t bit7 = *reg_x & 0x80;
     uint8_t bit0 = *reg_x & 0x01;
@@ -276,7 +276,7 @@ void instruction_sra(struct cpu8080 *cpu, uint8_t *reg_x){
     flags_test_P(&cpu->flags, *reg_x);
 }
 
-void instruction_srl(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_srl(struct cpuz80 *cpu, uint8_t *reg_x){
     uint8_t bit0 = *reg_x & 0x01;
     *reg_x >>= 1;
 
@@ -291,7 +291,7 @@ void instruction_srl(struct cpu8080 *cpu, uint8_t *reg_x){
     flags_test_P(&cpu->flags, *reg_x);
 }
 
-void instruction_rl(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_rl(struct cpuz80 *cpu, uint8_t *reg_x){
     uint8_t bit7 = *reg_x & 0x80;
     *reg_x <<= 1;
     if(cpu->flags.cy){
@@ -309,7 +309,7 @@ void instruction_rl(struct cpu8080 *cpu, uint8_t *reg_x){
     cpu->flags.h = 0;
 }
 
-void instruction_rr(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_rr(struct cpuz80 *cpu, uint8_t *reg_x){
     uint8_t bit0 = *reg_x & 0x01;
     *reg_x >>= 1;
     if(cpu->flags.cy){
@@ -327,7 +327,7 @@ void instruction_rr(struct cpu8080 *cpu, uint8_t *reg_x){
     cpu->flags.h = 0;
 }
 
-void instruction_rlc(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_rlc(struct cpuz80 *cpu, uint8_t *reg_x){
     uint8_t bit7 = *reg_x & 0x80;
     *reg_x <<= 1;
     if(bit7){
@@ -341,7 +341,7 @@ void instruction_rlc(struct cpu8080 *cpu, uint8_t *reg_x){
     cpu->flags.h = 0;
 }
 
-void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_rrc(struct cpuz80 *cpu, uint8_t *reg_x){
     uint8_t bit0 = *reg_x & 0x01;
     *reg_x >>= 1;
     if(bit0){
@@ -355,7 +355,7 @@ void instruction_rrc(struct cpu8080 *cpu, uint8_t *reg_x){
     cpu->flags.h = 0;
 }
 
-void instruction_inc(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_inc(struct cpuz80 *cpu, uint8_t *reg_x){
     uint8_t result = *reg_x + 1;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, *reg_x, 1, 0);
@@ -364,7 +364,7 @@ void instruction_inc(struct cpu8080 *cpu, uint8_t *reg_x){
     *reg_x = result;
 }
 
-void instruction_dec(struct cpu8080 *cpu, uint8_t *reg_x){
+void instruction_dec(struct cpuz80 *cpu, uint8_t *reg_x){
     uint8_t result = *reg_x + ~1 + 1;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, *reg_x, ~1, 1);
@@ -374,7 +374,7 @@ void instruction_dec(struct cpu8080 *cpu, uint8_t *reg_x){
     *reg_x = result;
 }
 
-void instruction_add(struct cpu8080 *cpu, uint8_t reg_x){
+void instruction_add(struct cpuz80 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + reg_x;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, cpu->reg_A, reg_x, 0);
@@ -386,7 +386,7 @@ void instruction_add(struct cpu8080 *cpu, uint8_t reg_x){
 }
 
 
-void instruction_adc(struct cpu8080 *cpu, uint8_t reg_x){
+void instruction_adc(struct cpuz80 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + reg_x + cpu->flags.cy;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, cpu->reg_A, reg_x, cpu->flags.cy);
@@ -397,7 +397,7 @@ void instruction_adc(struct cpu8080 *cpu, uint8_t reg_x){
     cpu->reg_A = result;
 }
 
-void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x){
+void instruction_sub(struct cpuz80 *cpu, uint8_t reg_x){
     uint16_t result = cpu->reg_A + (uint16_t)~(reg_x) + 1;
     flags_test_ZS(&cpu->flags, result);
     flags_test_H(&cpu->flags, cpu->reg_A, ~reg_x, 1);
@@ -414,7 +414,7 @@ void instruction_sub(struct cpu8080 *cpu, uint8_t reg_x){
 }
 
 
-void instruction_sbc(struct cpu8080 *cpu, uint8_t reg_x){
+void instruction_sbc(struct cpuz80 *cpu, uint8_t reg_x){
     uint8_t borrow = ~(cpu->flags.cy) & 0x01;
     uint16_t result = cpu->reg_A + (uint16_t)~(reg_x) + borrow;
     flags_test_ZS(&cpu->flags, result);
@@ -431,13 +431,13 @@ void instruction_sbc(struct cpu8080 *cpu, uint8_t reg_x){
     cpu->reg_A = result;
 }
 
-void instruction_cmp(struct cpu8080 *cpu, uint8_t reg_x){
+void instruction_cmp(struct cpuz80 *cpu, uint8_t reg_x){
     uint8_t temp = cpu->reg_A;
     instruction_sub(cpu, reg_x);
     cpu->reg_A = temp;
 }
 
-void instruction_ana(struct cpu8080 *cpu, uint8_t reg_x){
+void instruction_ana(struct cpuz80 *cpu, uint8_t reg_x){
     cpu->reg_A &= reg_x;
     flags_test_ZS(&cpu->flags, cpu->reg_A);
     cpu->flags.h = 1;
@@ -446,7 +446,7 @@ void instruction_ana(struct cpu8080 *cpu, uint8_t reg_x){
     cpu->flags.cy = 0;
 }
 
-void instruction_xra(struct cpu8080 *cpu, uint8_t reg_x){
+void instruction_xra(struct cpuz80 *cpu, uint8_t reg_x){
     cpu->reg_A ^= reg_x;
     flags_test_ZS(&cpu->flags, cpu->reg_A);
     cpu->flags.h = 0;
@@ -455,7 +455,7 @@ void instruction_xra(struct cpu8080 *cpu, uint8_t reg_x){
     cpu->flags.cy = 0;
 }
 
-void instruction_ora(struct cpu8080 *cpu, uint8_t reg_x){
+void instruction_ora(struct cpuz80 *cpu, uint8_t reg_x){
     cpu->reg_A |= reg_x;
     flags_test_ZS(&cpu->flags, cpu->reg_A);
     cpu->flags.h = 0;

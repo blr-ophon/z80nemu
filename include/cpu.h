@@ -21,7 +21,7 @@
 //only set/reset by the cpu emulation, while all pins that "come in" to the
 //cpu are set/reset by (emulated) external devices.
 
-typedef struct cpu8080{
+typedef struct cpuz80{
     Memory *memory;
     Flags flags;
     //Registers
@@ -52,7 +52,7 @@ typedef struct cpu8080{
     //Pointers to bus
     uint8_t *data_bus;
     uint16_t *address_bus;
-} Cpu8080;
+} Cpuz80;
 
 //PINS AND BUSES BEHAVIOR:
 //RD,WR pins and address/data buses will not be set properly in me-
@@ -68,20 +68,20 @@ typedef struct cpu8080{
 //dicate that the CPU is still executing something and can't be in-
 //terrupted.
 
-uint16_t cpu_GetLIWord(Cpu8080 *cpu);
+uint16_t cpu_GetLIWord(Cpuz80 *cpu);
 
-void cpu_init(Cpu8080 *cpu, Memory *memory);
+void cpu_init(Cpuz80 *cpu, Memory *memory);
 
-void cpu_cycle(Cpu8080 *cpu);
+void cpu_cycle(Cpuz80 *cpu);
 
-void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode);
+void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode);
 
-void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode);
+void cpu_bit_instructions(Cpuz80 *cpu, uint8_t *opcode);
 
-void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode);
+void cpu_IXIY_instructions(Cpuz80 *cpu, uint8_t *opcode, bool iy_mode);
 
-void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t *opcode, uint8_t d_operand, bool iy_mode);
+void cpu_IXIY_bit_instructions(Cpuz80 *cpu, uint8_t *opcode, uint8_t d_operand, bool iy_mode);
 
-void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode);
+void cpu_misc_instructions(Cpuz80 *cpu, uint8_t opcode);
 
 #endif

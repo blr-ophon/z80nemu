@@ -8,22 +8,21 @@
 //and execute the copy. this simulates the pc being saved in instruction
 //register before being incremented. This should be done last, as it breaks
 //byte fetchs, pushs, jumps, calls, in, out etc
-//TODO: check the z80 implementation of DAA
 
-static void unimplemented_opcode(Cpu8080 *cpu, uint8_t *opcode){
+static void unimplemented_opcode(Cpuz80 *cpu, uint8_t *opcode){
     fprintf(stderr, "Unimplemented Opcode: %02X\n", *opcode);
     fprintf(stderr, "Step: %d\n", cpu->step_count);
     exit(1);
 }
 
-uint16_t cpu_GetLIWord(Cpu8080 *cpu){
+uint16_t cpu_GetLIWord(Cpuz80 *cpu){
     uint16_t word = cpu->memory->memory[++cpu->PC];
     word ^= (uint16_t) cpu->memory->memory[++cpu->PC] << 8;
     return word;
 }
 
 
-void cpu_init(Cpu8080 *cpu, Memory *memory){
+void cpu_init(Cpuz80 *cpu, Memory *memory){
     //Clear cpu registers
     memset(cpu, 0, sizeof(*cpu));
     //memset(used_opcodes, 0xff, sizeof(used_opcodes)); //USED in DEBUG log
@@ -33,7 +32,7 @@ void cpu_init(Cpu8080 *cpu, Memory *memory){
     cpu->PC = 0x0100;
 }
 
-void cpu_cycle(Cpu8080 *cpu){
+void cpu_cycle(Cpuz80 *cpu){
     //Check for interrupts and bus requests
     if(cpu->INT_pin && cpu->interrupt_enable){ //RST, byte
     }
@@ -45,7 +44,7 @@ void cpu_cycle(Cpu8080 *cpu){
     cpu->step_count++;
 }
 
-void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
+void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
     switch(*opcode){
         case 0x00: //NOP
             break;
@@ -1172,7 +1171,7 @@ void cpu_exec_instruction(Cpu8080 *cpu, uint8_t *opcode){
     }
 }
 
-void cpu_bit_instructions(Cpu8080 *cpu, uint8_t *opcode){
+void cpu_bit_instructions(Cpuz80 *cpu, uint8_t *opcode){
     //TODO: use pointer to functions to reduce lines of code here
     switch(*opcode){
         //TODO: Check proper CPU Flags handling
@@ -1454,7 +1453,7 @@ void instruction_IXIY_add(Flags *flags, uint16_t *ix_or_iy, uint16_t reg_pair){
     *ix_or_iy = result; 
 }
 
-void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
+void cpu_IXIY_instructions(Cpuz80 *cpu, uint8_t *opcode, bool iy_mode){
     uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
     switch(*opcode){
         case 0x09: //ADD IX/Y,BC
@@ -1586,7 +1585,7 @@ void cpu_IXIY_instructions(Cpu8080 *cpu, uint8_t *opcode, bool iy_mode){
     }
 }
 
-void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t *opcode, uint8_t d_operand, bool iy_mode){
+void cpu_IXIY_bit_instructions(Cpuz80 *cpu, uint8_t *opcode, uint8_t d_operand, bool iy_mode){
     uint16_t *ix_or_iy = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
     uint16_t adr = (*ix_or_iy) + (int16_t)d_operand;
     uint8_t *ixy_operand = &cpu->memory->memory[adr];
@@ -1635,7 +1634,7 @@ void cpu_IXIY_bit_instructions(Cpu8080 *cpu, uint8_t *opcode, uint8_t d_operand,
     }
 }
 
-void instruction_misc_adc(struct cpu8080 *cpu, uint16_t reg_x){
+void instruction_misc_adc(struct cpuz80 *cpu, uint16_t reg_x){
     uint32_t result = read_reg_HL(cpu) + reg_x + cpu->flags.cy;
     flags_test_V16(&cpu->flags, read_reg_HL(cpu), reg_x + cpu->flags.cy);
     flags_test_H16(&cpu->flags, read_reg_HL(cpu), reg_x, cpu->flags.cy);
@@ -1648,7 +1647,7 @@ void instruction_misc_adc(struct cpu8080 *cpu, uint16_t reg_x){
     write_reg_HL(cpu, result);
 }
 
-void instruction_misc_sbc(struct cpu8080 *cpu, uint16_t reg_x){
+void instruction_misc_sbc(struct cpuz80 *cpu, uint16_t reg_x){
     uint8_t borrow = ~(cpu->flags.cy) & 0x01;
     uint32_t result = read_reg_HL(cpu) + ~reg_x + borrow;
 
@@ -1668,7 +1667,7 @@ void instruction_misc_sbc(struct cpu8080 *cpu, uint16_t reg_x){
     write_reg_HL(cpu, result);
 }
 
-void cpu_misc_instructions(Cpu8080 *cpu, uint8_t opcode){
+void cpu_misc_instructions(Cpuz80 *cpu, uint8_t opcode){
     switch(opcode){
         case 0x40: //IN B,(c)
             io_routines_IN(cpu, &cpu->reg_B);

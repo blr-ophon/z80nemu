@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
     memory_program_load(memory, buf, size,  0x0100);
     fclose(f);
 
-    Cpu8080 cpu;
+    Cpuz80 cpu;
     cpu_init(&cpu, memory);
     cpu.PC = 0x0100;
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-void test_print_subroutine(Cpu8080 *cpu){
+void test_print_subroutine(Cpuz80 *cpu){
     //execute subroutine
     if(cpu->reg_C == 0x02){
         printf("%c", cpu->reg_E);

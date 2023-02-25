@@ -3,6 +3,6 @@
 #include <stdlib.h>
 #include "cpu.h"
 
-void test_print_subroutine(Cpu8080 *cpu);
+void test_print_subroutine(Cpuz80 *cpu);
 
 #endif
