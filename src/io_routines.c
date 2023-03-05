@@ -1,5 +1,6 @@
 #include "io_routines.h"
 #include "cpu.h"
+#include "memory.h"
 
 //TODO: document the process of programmed IO, Interrupt and DMA here
 //
@@ -7,7 +8,7 @@
 //byte (c) as address, giving it 256 possibilities. In hardware, this means the 
 //upper 8 address pins are not connected at all to IO chips.
 
-void io_routines_IN(struct cpuz80 *cpu, uint8_t *reg_x){
+void io_routines_IN_C(struct cpuz80 *cpu, uint8_t *reg_x){
     //Instruction is executed in two parts. 
     //
     //In the first one it sends the address to address bus and sets proper 
@@ -25,6 +26,7 @@ void io_routines_IN(struct cpuz80 *cpu, uint8_t *reg_x){
         cpu->MREQ_pin = 1;
         cpu->RD_pin = 0;
         cpu->WR_pin = 1;
+        cpu->M_pin = 1;
         *(cpu->address_bus) = read_reg_BC(cpu);
         cpu->PC -= 2; //TODO: check/test
         return;
@@ -49,7 +51,7 @@ void io_routines_IN(struct cpuz80 *cpu, uint8_t *reg_x){
     flags_test_ZS(&cpu->flags, *reg_x);
 }
 
-void io_routines_OUT(struct cpuz80 *cpu, uint8_t *reg_x){
+void io_routines_OUT_C(struct cpuz80 *cpu, uint8_t *reg_x){
     //Instruction is executed in two parts. 
     //
     //In the first one, it sets the proper flags and latches the byte in
@@ -65,6 +67,7 @@ void io_routines_OUT(struct cpuz80 *cpu, uint8_t *reg_x){
         cpu->MREQ_pin = 1;
         cpu->RD_pin = 1;
         cpu->WR_pin = 0;
+        cpu->M_pin = 1;
         *(cpu->address_bus) = read_reg_BC(cpu);
         *(cpu->data_bus) = *reg_x;
         cpu->PC -= 2; //TODO: check/test
@@ -76,6 +79,58 @@ void io_routines_OUT(struct cpuz80 *cpu, uint8_t *reg_x){
         //fetch instruction again for IN instructions, but the actual hardware
         //only fetches IN one time, so the second time does not count as an 
         //actual fetch to allow DMA and interrupts. Create a pin M.
+    } 
+
+    //SECOND PART OF INSTRUCTION
+    //pins
+    cpu->IORQ_pin = 1;
+    cpu->MREQ_pin = 0;
+    //flags
+        cpu->flags.n = 0;
+    flags_test_P(&cpu->flags, *reg_x);
+    cpu->flags.h = 0;
+    flags_test_ZS(&cpu->flags, *reg_x);
+}
+
+void io_routines_IN(struct cpuz80 *cpu, uint8_t *reg_x){
+    //FIRST PART OF INSTRUCTION
+    if(cpu->IORQ_pin){ //active low
+        cpu->IORQ_pin = 0;
+        cpu->MREQ_pin = 1;
+        cpu->RD_pin = 0;
+        cpu->WR_pin = 1;
+        cpu->M_pin = 1;
+        *(cpu->address_bus) = memory_read8(cpu->memory, ++cpu->PC); 
+        *(cpu->address_bus) |= ((uint16_t)cpu->reg_A) << 8;
+        cpu->PC -= 3; //TODO: check/test
+        return;
+    } 
+
+    //SECOND PART OF INSTRUCTION
+    //pins
+    cpu->IORQ_pin = 1;
+    cpu->MREQ_pin = 0;
+    //flags
+    *reg_x = *(cpu->data_bus);
+    cpu->flags.n = 0;
+    flags_test_P(&cpu->flags, *reg_x);
+    cpu->flags.h = 0;
+    flags_test_ZS(&cpu->flags, *reg_x);
+}
+
+void io_routines_OUT(struct cpuz80 *cpu, uint8_t *reg_x){
+    //FIRST PART OF INSTRUCTION
+    if(cpu->IORQ_pin){ //active low
+        cpu->IORQ_pin = 0;
+        cpu->MREQ_pin = 1;
+        cpu->RD_pin = 1;
+        cpu->WR_pin = 0;
+        cpu->M_pin = 1;
+        *(cpu->address_bus) = memory_read8(cpu->memory, ++cpu->PC); 
+        *(cpu->address_bus) |= ((uint16_t)cpu->reg_A) << 8;
+        *(cpu->data_bus) = *reg_x;
+        cpu->PC -= 3; //TODO: check/test
+        return;
     } 
 
     //SECOND PART OF INSTRUCTION

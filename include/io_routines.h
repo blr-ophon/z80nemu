@@ -8,4 +8,8 @@ void io_routines_IN(struct cpuz80 *cpu, uint8_t *reg_x);
 
 void io_routines_OUT(struct cpuz80 *cpu, uint8_t *reg_x);
 
+void io_routines_IN_C(struct cpuz80 *cpu, uint8_t *reg_x);
+
+void io_routines_OUT_C(struct cpuz80 *cpu, uint8_t *reg_x);
+
 #endif

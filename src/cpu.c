@@ -33,15 +33,18 @@ void cpu_init(Cpuz80 *cpu, Memory *memory){
 }
 
 void cpu_cycle(Cpuz80 *cpu){
-    //Check for interrupts and bus requests
-    if(cpu->INT_pin && cpu->interrupt_enable){ //RST, byte
-    }
-
+    cpu->M_pin = 0;     //this is set by io instructions to avoid interrupts
+                        //and DMAs during execution in 2 parts
     //fetch
     uint8_t opcode = memory_read8(cpu->memory, cpu->PC);
     cpu_exec_instruction(cpu, &opcode);
     cpu->PC ++;
     cpu->step_count++;
+
+    //Check for interrupts
+    if(cpu->INT_pin && cpu->interrupt_enable && cpu->M_pin){ 
+    }
+    //Check for bus requests
 }
 
 void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
@@ -883,18 +886,8 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
             break;
             }
         case 0xd3: //OUT (n),A
-            {
-            //duplicated byte on address bus
-            uint16_t adr = (uint16_t) memory_read8(cpu->memory, ++cpu->PC);
-            adr |= adr << 8;
-            *(cpu->address_bus) = adr; 
-            //reg_A on data_bus
-            *(cpu->data_bus) = cpu->reg_A;
-            cpu->IORQ_pin = 0;  //active low 
-            cpu->WR_pin = 0;    //active low 
-            cpu->RD_pin = 1;    //active low
+            io_routines_OUT(cpu, &cpu->reg_A);
             break;
-            }
         case 0xd4: //CALL NC,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
@@ -936,15 +929,8 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
             break;
             }
         case 0xdb: //IN A,(n)
-            {
-            uint16_t adr = (uint16_t) memory_read8(cpu->memory, ++cpu->PC);
-            adr |= adr << 8;
-            *(cpu->address_bus) = adr; 
-            cpu->IORQ_pin = 0;  //active low 
-            cpu->WR_pin = 1;    //active low 
-            cpu->RD_pin = 0;    //active low
+            io_routines_IN(cpu, &cpu->reg_A);
             break;
-            }
         case 0xdc: //CALL C,nn
             {
             uint16_t adr = cpu_GetLIWord(cpu);
@@ -1670,10 +1656,10 @@ void instruction_misc_sbc(struct cpuz80 *cpu, uint16_t reg_x){
 void cpu_misc_instructions(Cpuz80 *cpu, uint8_t opcode){
     switch(opcode){
         case 0x40: //IN B,(c)
-            io_routines_IN(cpu, &cpu->reg_B);
+            io_routines_IN_C(cpu, &cpu->reg_B);
             break;
         case 0x41: //OUT (c),B
-            io_routines_OUT(cpu, &cpu->reg_B);
+            io_routines_OUT_C(cpu, &cpu->reg_B);
             break;
         case 0x42: //SBC HL,BC
             instruction_misc_sbc(cpu, read_reg_BC(cpu));

@@ -40,12 +40,13 @@ typedef struct cpuz80{
     uint16_t reg_IY;
     uint16_t reg_INTRV;
     //Pins
-    bool RD_pin:1;    //active low / modified by cpu
-    bool WR_pin:1;    //active low / modified by cpu
-    bool IORQ_pin:1;  //active low / modified by cpu
-    bool MREQ_pin:1;  //active low / modified by cpu
-    bool INT_pin:1;   //active low / modified by external device
-    bool NMI_pin:1;   //active low / modified by external device
+    bool M_pin:1;       //active low / modified by cpu
+    bool RD_pin:1;      //active low / modified by cpu
+    bool WR_pin:1;      //active low / modified by cpu
+    bool IORQ_pin:1;    //active low / modified by cpu
+    bool MREQ_pin:1;    //active low / modified by cpu
+    bool INT_pin:1;     //active low / modified by external device
+    bool NMI_pin:1;     //active low / modified by external device
     //Internal Registers
     bool interrupt_enable:1;
     uint32_t step_count;
