@@ -2,6 +2,39 @@
 #include "cpu.h"
 //TODO: fix function head parameter names. reg_x is confusing now
 
+void instruction_misc_adc(struct cpuz80 *cpu, uint16_t reg_x){
+    uint32_t result = read_reg_HL(cpu) + reg_x + cpu->flags.cy;
+    flags_test_V16(&cpu->flags, read_reg_HL(cpu), reg_x + cpu->flags.cy);
+    flags_test_H16(&cpu->flags, read_reg_HL(cpu), reg_x, cpu->flags.cy);
+    flags_test_C16(&cpu->flags, result);
+
+    cpu->flags.z = (uint16_t)result == 0? 1 : 0;
+    cpu->flags.s = result & 0x8000? 1 : 0;
+    cpu->flags.n = 0;
+
+    write_reg_HL(cpu, result);
+}
+
+void instruction_misc_sbc(struct cpuz80 *cpu, uint16_t reg_x){
+    uint8_t borrow = ~(cpu->flags.cy) & 0x01;
+    uint32_t result = read_reg_HL(cpu) + ~reg_x + borrow;
+
+    cpu->flags.cy = 0;
+    if((result ^ read_reg_HL(cpu) ^ ~reg_x) & 0x10000){ 
+        cpu->flags.cy = 1;
+    }
+
+    flags_test_V16(&cpu->flags, read_reg_HL(cpu), ~(reg_x) + borrow);
+    flags_test_H16(&cpu->flags, read_reg_HL(cpu), ~reg_x, borrow);
+
+    cpu->flags.z = (uint16_t)result == 0? 1 : 0;
+    cpu->flags.s = result & 0x08000? 1 : 0;
+    cpu->flags.n = 1;
+    cpu->flags.cy = ~cpu->flags.cy & 0x01;
+
+    write_reg_HL(cpu, result);
+}
+
 void instruction_res_set_IXIY(struct cpuz80 *cpu, uint8_t opcode, bool bit_state, uint8_t *ixy_operand){
     //instruction format: 00bbbrrr, to set/reset bit b of (ix/y +d) and store in register r 
     uint8_t temp = *ixy_operand;

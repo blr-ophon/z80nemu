@@ -49,6 +49,7 @@ typedef struct cpuz80{
     bool NMI_pin:1;     //active low / modified by external device
     //Internal Registers
     bool interrupt_enable:1;
+    uint8_t interrupt_mode:2;
     uint32_t step_count;
     //Pointers to bus
     uint8_t *data_bus;

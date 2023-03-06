@@ -27,9 +27,32 @@ void cpu_init(Cpuz80 *cpu, Memory *memory){
     memset(cpu, 0, sizeof(*cpu));
     //memset(used_opcodes, 0xff, sizeof(used_opcodes)); //USED in DEBUG log
     cpu->step_count = 0; //should be cycle count
+    //INTERNAL REGISTERS
+    cpu->interrupt_enable = 1;
+    cpu->interrupt_mode = 0;
+    //PINS
+    cpu->M_pin = 1;
+    cpu->RD_pin = 1;
+    cpu->WR_pin = 1;
+    cpu->IORQ_pin = 1;
+    cpu->MREQ_pin = 1;
+    cpu->INT_pin = 1;
+    cpu->NMI_pin = 1;
     cpu->memory = memory;
     //TODO: custom PC initialization
     cpu->PC = 0x0100;
+}
+
+void cpu_int_handler(Cpuz80 *cpu){
+    switch(cpu->interrupt_mode){
+        case 0: //IM 0
+            break;
+        case 1: //IM 0
+            break;
+        case 2: //IM 0
+            break;
+    }
+
 }
 
 void cpu_cycle(Cpuz80 *cpu){
@@ -42,7 +65,8 @@ void cpu_cycle(Cpuz80 *cpu){
     cpu->step_count++;
 
     //Check for interrupts
-    if(cpu->INT_pin && cpu->interrupt_enable && cpu->M_pin){ 
+    if(!cpu->INT_pin && cpu->interrupt_enable && !cpu->M_pin){ 
+        cpu_int_handler(cpu);
     }
     //Check for bus requests
 }
@@ -1620,39 +1644,6 @@ void cpu_IXIY_bit_instructions(Cpuz80 *cpu, uint8_t *opcode, uint8_t d_operand, 
     }
 }
 
-void instruction_misc_adc(struct cpuz80 *cpu, uint16_t reg_x){
-    uint32_t result = read_reg_HL(cpu) + reg_x + cpu->flags.cy;
-    flags_test_V16(&cpu->flags, read_reg_HL(cpu), reg_x + cpu->flags.cy);
-    flags_test_H16(&cpu->flags, read_reg_HL(cpu), reg_x, cpu->flags.cy);
-    flags_test_C16(&cpu->flags, result);
-
-    cpu->flags.z = (uint16_t)result == 0? 1 : 0;
-    cpu->flags.s = result & 0x8000? 1 : 0;
-    cpu->flags.n = 0;
-
-    write_reg_HL(cpu, result);
-}
-
-void instruction_misc_sbc(struct cpuz80 *cpu, uint16_t reg_x){
-    uint8_t borrow = ~(cpu->flags.cy) & 0x01;
-    uint32_t result = read_reg_HL(cpu) + ~reg_x + borrow;
-
-    cpu->flags.cy = 0;
-    if((result ^ read_reg_HL(cpu) ^ ~reg_x) & 0x10000){ 
-        cpu->flags.cy = 1;
-    }
-
-    flags_test_V16(&cpu->flags, read_reg_HL(cpu), ~(reg_x) + borrow);
-    flags_test_H16(&cpu->flags, read_reg_HL(cpu), ~reg_x, borrow);
-
-    cpu->flags.z = (uint16_t)result == 0? 1 : 0;
-    cpu->flags.s = result & 0x08000? 1 : 0;
-    cpu->flags.n = 1;
-    cpu->flags.cy = ~cpu->flags.cy & 0x01;
-
-    write_reg_HL(cpu, result);
-}
-
 void cpu_misc_instructions(Cpuz80 *cpu, uint8_t opcode){
     switch(opcode){
         case 0x40: //IN B,(c)
@@ -1690,7 +1681,7 @@ void cpu_misc_instructions(Cpuz80 *cpu, uint8_t opcode){
                    //TODO
             break;
         case 0x46: //IM 0
-                   //TODO
+            cpu->interrupt_mode = 0;
             break;
         case 0x47: //LD I,A
             cpu->reg_I = cpu->reg_A;
@@ -1734,7 +1725,7 @@ void cpu_misc_instructions(Cpuz80 *cpu, uint8_t opcode){
             break;
             }
         case 0x56: //IM 1
-                   //TODO
+            cpu->interrupt_mode = 1;
             break;
         case 0x57: //LD A,I
             cpu->reg_A = cpu->reg_I;
@@ -1757,7 +1748,7 @@ void cpu_misc_instructions(Cpuz80 *cpu, uint8_t opcode){
             }
             break;
         case 0x5e: //IM 2
-                   //TODO
+            cpu->interrupt_mode = 2;
             break;
         case 0x5f: //LD A,R
             cpu->reg_A = cpu->reg_R;

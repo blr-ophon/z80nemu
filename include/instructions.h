@@ -6,6 +6,10 @@
 
 struct cpuz80;
 
+void instruction_misc_adc(struct cpuz80 *cpu, uint16_t reg_x);
+
+void instruction_misc_sbc(struct cpuz80 *cpu, uint16_t reg_x);
+
 void instruction_res_set_IXIY(struct cpuz80 *cpu, uint8_t opcode, bool bit_state, uint8_t *ixy_operand);
 
 void instruction_bit_IXIY(struct cpuz80 *cpu, uint8_t opcode, uint8_t *ixy_operand);
