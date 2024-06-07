@@ -411,6 +411,7 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
         case 0x00 ... 0x3f:
             instr_main(cpu, *opcode);
             break;
+        /*
         case 0x40: //LD B,B 
             //TODO: use instruction_ld from here onwards
             cpu->reg_B = cpu->reg_B;
@@ -574,9 +575,17 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
         case 0x75: //LD (HL),L 
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_L;
             break;
+        */
+        case 0x40 ... 0x75:
+            instr_main(cpu, *opcode);
+            break;
         case 0x76: //HALT
             //TODO
             break;
+        case 0x77 ... 0x7f:
+            instr_main(cpu, *opcode);
+            break;
+        /*
         case 0x77: //LD (HL),A 
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_A;
             break;
@@ -604,6 +613,7 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
         case 0x7f: //LD A,A
             cpu->reg_A = cpu->reg_A;
             break;
+        */
         case 0x80: //ADD A,B
             instruction_add(cpu, cpu->reg_B);
             break;

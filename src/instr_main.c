@@ -13,6 +13,7 @@ void instr_main(struct cpuz80 *cpu, uint8_t opcode){
             instr_main_A(cpu, opcode_yyy, opcode_zzz);
             break;
         case 1:
+            instr_main_B(cpu, opcode_yyy, opcode_zzz);
             break;
         case 2:
             break;
@@ -188,3 +189,17 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
 }
 
 
+void instr_main_B(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
+    uint8_t *regsPtrs[] = {
+        &cpu->reg_B,
+        &cpu->reg_C,
+        &cpu->reg_D,
+        &cpu->reg_E,
+        &cpu->reg_H,
+        &cpu->reg_L,
+        &cpu->memory->memory[read_reg_HL(cpu)],
+        &cpu->reg_A
+    };
+
+    *(regsPtrs[opcode_yyy]) = *(regsPtrs[opcode_zzz]);
+}
