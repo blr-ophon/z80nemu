@@ -46,9 +46,6 @@ int DCD_FetchDecode(Cpuz80 *cpu, DCD_Instruction *inst){
         //TODO: decode opcode and discover its instruction format
     }
 
-
-
-
     return rv;
 }
 

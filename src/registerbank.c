@@ -34,3 +34,11 @@ uint16_t read_reg_HL(Cpuz80 *cpu){
     word ^= (uint16_t) cpu->reg_H << 8;
     return word;
 }
+
+void write_reg_SP(Cpuz80 *cpu, uint16_t value){
+    cpu->SP = value;
+}
+
+uint16_t read_reg_SP(Cpuz80 *cpu){
+    return cpu->SP;
+}

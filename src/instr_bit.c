@@ -1,6 +1,8 @@
 #include "instr_bit.h"
 #include "cpu.h"
 
+//TODO: Document functions
+
 /*
  * single byte instructions, no immediates
  * (xx)(yyy)(zzz)
@@ -41,14 +43,14 @@ void instr_bit(struct cpuz80 *cpu, uint8_t opcode){
     };
 
     void(*operations_rs[])(struct cpuz80 *cpu, uint8_t *reg_x) = {
-        instruction_rlc,
-        instruction_rrc,
-        instruction_rl,
-        instruction_rr,
-        instruction_sla,
-        instruction_sra,
-        instruction_sll,
-        instruction_srl,
+        instr_bit_RLC,
+        instr_bit_RRC,
+        instr_bit_RL,
+        instr_bit_RR,
+        instr_bit_SLA,
+        instr_bit_SRA,
+        instr_bit_SLL,
+        instr_bit_SRL,
     };
 
     switch(operationIndex1){
@@ -73,7 +75,7 @@ void instr_bit(struct cpuz80 *cpu, uint8_t opcode){
  * Bit n, reg_x
  * Test bit n of reg_x
  */
-void instr_bit_Bit(struct cpuz80 *cpu, uint8_t n, uint8_t *reg_x){
+void instr_bit_BIT(struct cpuz80 *cpu, uint8_t n, uint8_t *reg_x){
     if((*reg_x >> n) & 0x01){
         cpu->flags.z = 0;
     } else cpu->flags.z = 1;
@@ -95,6 +97,9 @@ void instr_bit_RES_SET(struct cpuz80 *cpu, uint8_t n, uint8_t *reg_x, bool res_s
         *reg_x &= ~((uint8_t) 0x01 << n);
     }
 }
+
+
+
 
 void instr_bit_RLC(struct cpuz80 *cpu, uint8_t *reg_x){
     uint8_t bit7 = *reg_x & 0x80;

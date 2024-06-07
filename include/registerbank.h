@@ -17,4 +17,8 @@ void write_reg_HL(Cpuz80 *cpu, uint16_t value);
 
 uint16_t read_reg_HL(Cpuz80 *cpu);
 
+void write_reg_SP(Cpuz80 *cpu, uint16_t value);
+
+uint16_t read_reg_SP(Cpuz80 *cpu);
+
 #endif
