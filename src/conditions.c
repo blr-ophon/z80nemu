@@ -5,8 +5,8 @@ bool condition_TRUE(struct cpuz80 *cpu){
 }
 
 bool condition_DNZ(struct cpuz80 *cpu){
-    //TODO: check
-    return (--cpu->reg_B != 0);
+    cpu->reg_B--;
+    return (cpu->reg_B != 0);
 }
 
 bool condition_NZ(struct cpuz80 *cpu){

@@ -87,8 +87,72 @@ void instr_main_A_INCDECRP(struct cpuz80 *cpu, uint8_t pair_idx, bool inc_dec){
         write_reg_HL,
         write_reg_SP,
     };
-    uint16_t increment = inc_dec? 1 : -1;
+    uint16_t increment = inc_dec? -1 : 1;
 
     uint16_t word = read_regPair[pair_idx](cpu); 
     write_regPair[pair_idx](cpu, word + increment);
 }
+
+//Rotate instructions
+void instr_main_A_ROT(struct cpuz80 *cpu, uint8_t rot_idx){
+    void(*ROT_A[])(struct cpuz80 *cpu, uint8_t *reg) = {
+        instruction_rlc,
+        instruction_rrc,
+        instruction_rl,
+        instruction_rr
+    };
+    ROT_A[rot_idx](cpu, &cpu->reg_A);
+}
+static inline void instr_main_A_DAA(struct cpuz80 *cpu){
+    uint8_t correction = 0;
+
+    uint8_t ls_nibble = cpu->reg_A & 0x0f;
+    if((ls_nibble > 0x09) || cpu->flags.h){
+        correction += 0x06;
+    }
+
+    uint8_t ms_nibble = cpu->reg_A & 0xf0;
+    if((ms_nibble > 0x90) || cpu->flags.cy || (ms_nibble >= 0x90 && ls_nibble > 9)){
+        correction += 0x60;
+        cpu->flags.cy = 1; //if no overflow, remais unchanged, not reset
+    }
+
+    if(cpu->flags.n){
+        cpu->flags.h = cpu->flags.h && (cpu->reg_A & 0x0F) < 0x06;
+        cpu->reg_A  -= correction;
+    }else{
+        cpu->flags.h = (cpu->reg_A & 0x0F) > 0x09;
+        cpu->reg_A += correction;
+      }
+    flags_test_ZS(&cpu->flags, cpu->reg_A);
+    flags_test_P(&cpu->flags, cpu->reg_A);
+}
+
+void instr_main_A_SPECIAL(struct cpuz80 *cpu, uint8_t idx){
+    //DAA, CPL, SCF, CCF
+    switch(idx){
+        case 0: //DAA
+            instr_main_A_DAA(cpu);
+            break;
+        case 1: //CPL
+            cpu->flags.n = 1;
+            cpu->flags.h = 1;
+            cpu->reg_A = ~cpu->reg_A;
+            break;
+        case 2: //SCF
+            cpu->flags.h = 0;
+            cpu->flags.n = 0;
+            cpu->flags.cy = 1;
+            break;
+        case 3: //CCF
+            cpu->flags.h = cpu->flags.cy;
+            cpu->flags.n = 0;
+            cpu->flags.cy = !cpu->flags.cy;
+            break;
+    }
+}
+
+
+
+
+

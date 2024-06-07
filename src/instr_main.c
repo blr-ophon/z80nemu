@@ -28,13 +28,29 @@ void instr_main(struct cpuz80 *cpu, uint8_t opcode){
  */
 void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
     switch(opcode_zzz){
-        case 0: //JR(Cond) n
+        case 0: //NOP, EX AF,AF', JR(Cond) n
             /*
-             * yyy = specify one from 8 conditions
-             * 
+             * yyy = specify one from 6 conditions
+             * 000: NOP
+             * 001: EX AF,AF'
              */
             {
+            if(opcode_yyy == 0) //NOP
+                break;
+            if(opcode_yyy == 1){ //EX AF,AF'
+                uint16_t nreg_af = flags_load_byte(&cpu->flags);
+                nreg_af |= ((uint16_t)cpu->reg_A) << 8;
+                nreg_af = ~nreg_af;
+
+                uint8_t reg_F = nreg_af;
+                flags_sta_byte(&cpu->flags, reg_F);
+                cpu->reg_A = nreg_af >> 8;
+                break;
+            }
+
             bool(*condition_X[])(struct cpuz80 *cpu) = {
+                NULL,   //NOP
+                NULL,   //EX AF,AF'
                 condition_DNZ,
                 condition_TRUE,
                 condition_NZ,
@@ -42,8 +58,8 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
                 condition_NC,
                 condition_C,
             };
-
             bool condition = condition_X[opcode_yyy](cpu); 
+
             uint8_t Imm = memory_read8(cpu->memory, ++cpu->PC);
 
             if(condition){
@@ -51,9 +67,10 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
             }
             }
             break;
-        case 1: //LD regPair, XImm      //Add regPair, regPair
+        case 1: //LD regPair, XImm      
+                //ADD regPair, regPair
             /*
-             * yyy = first bit defines if ADD or LD
+             * yyy = first bit defines if LD or ADD
              * last 2 bits specify one from four pairs
              */
             {
@@ -63,12 +80,13 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
             void(*LD_ADD_regPair[])(struct cpuz80 *cpu, uint8_t pair_idx) = {
                 instr_main_A_LDRPnn,
                 instr_main_A_addHLRP,
-            };
+                };
 
             LD_ADD_regPair[op_idx](cpu, pair_idx);
             }
             break;
-        case 2: //LD (dst), A               //LD A, (src)
+        case 2: //LD (dst), A               
+                //LD A, (src)
             /*
              * yyy = first bit defines LD (dst),A or LD A,(src)
              * last 2 bits specify if dst/adr is BC(0), DE(1) or XImm(2,3)
@@ -85,7 +103,8 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
             LD_SRC_DST[op_idx](cpu, srcdst_idx);
             break;
             }
-        case 3: //INC (regPair)             //DEC (regPair)
+        case 3: //INC (regPair)             
+                //DEC (regPair)
             /*
              * yyy = first bit defines INC(0) or DEC(1)
              * last 2 bits specify register pair
@@ -152,9 +171,18 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
             *regsPtrs[opcode_yyy] = val;
             break;
             }
-        case 7: //RLCA, RRCA, RLA, RRA, DAA, CPL, SCF, CCF
-                //AKA Special
-                //
+        case 7: //RLCA, RRCA, RLA, RRA
+                //DAA, CPL, SCF, CCF
+            /*
+             * yyy: 
+             * 000 - 011: Rotate
+             * 100 - 111: Special 
+             */
+            if(opcode_yyy <= 3){ //Rotate A 
+                instr_main_A_ROT(cpu, opcode_yyy);
+            }else{ //SPECIAL
+                instr_main_A_SPECIAL(cpu, opcode_yyy - 4);
+            }
             break;
     }
 }

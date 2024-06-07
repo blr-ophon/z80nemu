@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "instr_main.h"
 //TODO: create a common header for cpu.h, flags.h, instructions.h and io_routines.h
 //to avoid redefinition of structs errors
 //TODO: CPU speed
@@ -73,6 +74,7 @@ void cpu_cycle(Cpuz80 *cpu){
 
 void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
     switch(*opcode){
+        /*
         case 0x00: //NOP
             break;
         case 0x01: //LD BC,nn
@@ -404,6 +406,10 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
             cpu->flags.h = cpu->flags.cy;
             cpu->flags.n = 0;
             cpu->flags.cy = !cpu->flags.cy;
+            break;
+        */
+        case 0x00 ... 0x3f:
+            instr_main(cpu, *opcode);
             break;
         case 0x40: //LD B,B 
             //TODO: use instruction_ld from here onwards
