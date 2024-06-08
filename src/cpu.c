@@ -585,6 +585,9 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
         case 0x77 ... 0x7f:
             instr_main(cpu, *opcode);
             break;
+        case 0x80 ... 0xbf:
+            instr_main(cpu, *opcode);
+            break;
         /*
         case 0x77: //LD (HL),A 
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_A;
@@ -614,6 +617,8 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
             cpu->reg_A = cpu->reg_A;
             break;
         */
+
+        /*
         case 0x80: //ADD A,B
             instruction_add(cpu, cpu->reg_B);
             break;
@@ -808,6 +813,7 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
         case 0xbf: //CMP A
             instruction_cmp(cpu, cpu->reg_A);
             break;
+        */
         case 0xc0: //RET NZ
             if(!cpu->flags.z){
                 cpu->PC = stack_pop16(cpu) -1;

@@ -16,6 +16,7 @@ void instr_main(struct cpuz80 *cpu, uint8_t opcode){
             instr_main_B(cpu, opcode_yyy, opcode_zzz);
             break;
         case 2:
+            instr_main_C(cpu, opcode_yyy, opcode_zzz);
             break;
         case 3:
             break;
@@ -202,4 +203,33 @@ void instr_main_B(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
     };
 
     *(regsPtrs[opcode_yyy]) = *(regsPtrs[opcode_zzz]);
+}
+
+/*
+ * instruction format: 10RRRrrr. r is operand, R is operation;
+ */
+void instr_main_C(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
+    uint8_t *regsPtrs[] = {
+        &cpu->reg_B,
+        &cpu->reg_C,
+        &cpu->reg_D,
+        &cpu->reg_E,
+        &cpu->reg_H,
+        &cpu->reg_L,
+        &cpu->memory->memory[read_reg_HL(cpu)],
+        &cpu->reg_A
+    };
+
+    void(*operations[])(struct cpuz80 *cpu, uint8_t reg_x) = {
+        instruction_add,
+        instruction_adc,
+        instruction_sub,
+        instruction_sbc,
+        instruction_ana,
+        instruction_xra,
+        instruction_ora,
+        instruction_cmp
+    };
+
+    operations[opcode_yyy](cpu, *regsPtrs[opcode_zzz]);
 }
