@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include "instr_main.h"
+#include "instr_bit.h"
 //TODO: create a common header for cpu.h, flags.h, instructions.h and io_routines.h
 //to avoid redefinition of structs errors
 //TODO: CPU speed
@@ -1175,7 +1176,19 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
             cpu->PC = (INTERRUPT_VECTOR_SIZE * 7) - 1;
             break;
         */
+        case 0x00: //NOP
+            break;
+        case 0x08: //EX AF,AF'
+            {
+            uint16_t nreg_af = flags_load_byte(&cpu->flags);
+            nreg_af |= ((uint16_t)cpu->reg_A) << 8;
+            nreg_af = ~nreg_af;
 
+            uint8_t reg_F = nreg_af;
+            flags_sta_byte(&cpu->flags, reg_F);
+            cpu->reg_A = nreg_af >> 8;
+            break;
+            }
         case 0xc9: //RET
             cpu->PC = stack_pop16(cpu) -1;
             break;
@@ -1229,6 +1242,8 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
 
 void cpu_bit_instructions(Cpuz80 *cpu, uint8_t *opcode){
     //TODO: use pointer to functions to reduce lines of code here
+    instr_bit(cpu, *opcode);
+    /*
     switch(*opcode){
         //TODO: Check proper CPU Flags handling
         case 0x00: //RLC B
@@ -1497,6 +1512,7 @@ void cpu_bit_instructions(Cpuz80 *cpu, uint8_t *opcode){
             instruction_res_set(cpu, *opcode, 1);
             break;
     }
+    */
 }
 
 void instruction_IXIY_add(Flags *flags, uint16_t *ix_or_iy, uint16_t reg_pair){

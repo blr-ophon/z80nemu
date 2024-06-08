@@ -2,10 +2,12 @@
 #include "registerbank.h"
 
 //TODO: document functions
-//TODO: Move 
 //TODO: Use standard notation on code text, n/Imm nn/XImm
-//TODO: switch bool conditions to functions for efficiency
+//TODO: intr_main_X: function array
 
+/*
+ * Instructions marked as Exceptional are not handled here
+ */
 void instr_main(struct cpuz80 *cpu, uint8_t opcode){
     uint8_t opcode_xx = (opcode & 0xc0) >> 6;       //1100 0000    
     uint8_t opcode_yyy = (opcode & 0x38) >> 3;      //0011 1000
@@ -33,27 +35,25 @@ void instr_main(struct cpuz80 *cpu, uint8_t opcode){
  * yyy: operation specification (condition, register etc)
  */
 void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
+    uint8_t *regsPtrs[] = {
+        &cpu->reg_B,
+        &cpu->reg_C,
+        &cpu->reg_D,
+        &cpu->reg_E,
+        &cpu->reg_H,
+        &cpu->reg_L,
+        &cpu->memory->memory[read_reg_HL(cpu)],
+        &cpu->reg_A
+    };
     switch(opcode_zzz){
-        case 0: //NOP, EX AF,AF', JR(Cond) n
+        case 0: //JR(Cond) n
+                //Exceptional: NOP / EX AF,AF'
             /*
              * yyy = specify one from 6 conditions
              * 000: NOP
              * 001: EX AF,AF'
              */
             {
-            if(opcode_yyy == 0) //NOP
-                break;
-            if(opcode_yyy == 1){ //EX AF,AF'
-                uint16_t nreg_af = flags_load_byte(&cpu->flags);
-                nreg_af |= ((uint16_t)cpu->reg_A) << 8;
-                nreg_af = ~nreg_af;
-
-                uint8_t reg_F = nreg_af;
-                flags_sta_byte(&cpu->flags, reg_F);
-                cpu->reg_A = nreg_af >> 8;
-                break;
-            }
-
             bool(*condition_X[])(struct cpuz80 *cpu) = {
                 NULL,   //NOP
                 NULL,   //EX AF,AF'
@@ -71,8 +71,8 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
             if(condition){
                 cpu->PC += Imm;
             }
-            }
             break;
+            }
         case 1: //LD regPair, XImm      
                 //ADD regPair, regPair
             /*
@@ -127,16 +127,6 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
              * yyy = one of 8 registers
              */
             {
-            uint8_t *regsPtrs[] = {
-                &cpu->reg_B,
-                &cpu->reg_C,
-                &cpu->reg_D,
-                &cpu->reg_E,
-                &cpu->reg_H,
-                &cpu->reg_L,
-                &cpu->memory->memory[read_reg_HL(cpu)],
-                &cpu->reg_A
-            };
             instruction_inc(cpu, regsPtrs[opcode_yyy]);
             break;
             }
@@ -145,16 +135,6 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
              * yyy = one of 8 registers
              */
             {
-            uint8_t *regsPtrs[] = {
-                &cpu->reg_B,
-                &cpu->reg_C,
-                &cpu->reg_D,
-                &cpu->reg_E,
-                &cpu->reg_H,
-                &cpu->reg_L,
-                &cpu->memory->memory[read_reg_HL(cpu)],
-                &cpu->reg_A
-            };
             instruction_dec(cpu, regsPtrs[opcode_yyy]);
             break;
             }
@@ -163,16 +143,6 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
              * yyy = one of 8 registers
              */
             {
-            uint8_t *regsPtrs[] = {
-                &cpu->reg_B,
-                &cpu->reg_C,
-                &cpu->reg_D,
-                &cpu->reg_E,
-                &cpu->reg_H,
-                &cpu->reg_L,
-                &cpu->memory->memory[read_reg_HL(cpu)],
-                &cpu->reg_A
-            };
             uint8_t val = memory_read8(cpu->memory, ++cpu->PC);
             *regsPtrs[opcode_yyy] = val;
             break;
@@ -194,6 +164,10 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
 }
 
 
+/*
+ * yyy: dst register
+ * zzz: src register
+ */
 void instr_main_B(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
     uint8_t *regsPtrs[] = {
         &cpu->reg_B,
@@ -209,8 +183,10 @@ void instr_main_B(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
     *(regsPtrs[opcode_yyy]) = *(regsPtrs[opcode_zzz]);
 }
 
+
 /*
- * instruction format: 10RRRrrr. r is operand, R is operation;
+ * yyy: ALU operation
+ * zzz: src register
  */
 void instr_main_C(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
     uint8_t *regsPtrs[] = {
@@ -238,6 +214,11 @@ void instr_main_C(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
     operations[opcode_yyy](cpu, *regsPtrs[opcode_zzz]);
 }
 
+
+/*
+ * zzz: Operation
+ * yyy: Operation specific
+ */
 void instr_main_D(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
     bool(*condition_X[])(struct cpuz80 *cpu) = {
         condition_NZ,

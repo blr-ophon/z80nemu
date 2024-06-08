@@ -17,19 +17,9 @@
  *   reg
  */
 void instr_bit(struct cpuz80 *cpu, uint8_t opcode){
-    /*
-     * Index 1 defines if it is a Shift/Rotate or a bit/res/set instruction
-     * Index 2 specifies the kind of shift/rotate or bit/res/set instruction
-     * regIndex defines the register used in the operation
-     */
-    uint8_t operationIndex1 = (opcode & 0xc0) >> 6;     //1100 0000    
-    uint8_t operationIndex2 = (opcode & 0x38) >> 3;     //0011 1000
-    uint8_t regIndex = opcode & 0x07;                   //0000 0111
-
-    uint16_t adr = 0;
-    if(1){
-        adr = read_reg_HL(cpu);
-    }
+    uint8_t opcode_xx = (opcode & 0xc0) >> 6;     //1100 0000    
+    uint8_t opcode_yyy = (opcode & 0x38) >> 3;     //0011 1000
+    uint8_t opcode_zzz = opcode & 0x07;                   //0000 0111
 
     uint8_t *regsPtrs[] = {
         &cpu->reg_B,
@@ -38,7 +28,7 @@ void instr_bit(struct cpuz80 *cpu, uint8_t opcode){
         &cpu->reg_E,
         &cpu->reg_H,
         &cpu->reg_L,
-        &cpu->memory->memory[adr],
+        &cpu->memory->memory[read_reg_HL(cpu)],
         &cpu->reg_A
     };
 
@@ -53,21 +43,19 @@ void instr_bit(struct cpuz80 *cpu, uint8_t opcode){
         instr_bit_SRL,
     };
 
-    switch(operationIndex1){
+    switch(opcode_xx){
         case 0: //Rotate, Shift
-            operations_rs[operationIndex2](cpu, regsPtrs[regIndex]);
+            operations_rs[opcode_yyy](cpu, regsPtrs[opcode_zzz]);
             break;
         case 1: //Bit
-            instr_bit_BIT(cpu, operationIndex2, regsPtrs[regIndex]);
+            instr_bit_BIT(cpu, opcode_yyy, regsPtrs[opcode_zzz]);
             break;
         case 2: //Reset
-            instr_bit_RES_SET(cpu, operationIndex2, regsPtrs[regIndex], 0);
+            instr_bit_RES_SET(cpu, opcode_yyy, regsPtrs[opcode_zzz], 0);
             break;
         case 3: //Set
-            instr_bit_RES_SET(cpu, operationIndex2, regsPtrs[regIndex], 1);
+            instr_bit_RES_SET(cpu, opcode_yyy, regsPtrs[opcode_zzz], 1);
             break;
-        default:
-            //TODO: return error
     }
 }
 
@@ -102,132 +90,43 @@ void instr_bit_RES_SET(struct cpuz80 *cpu, uint8_t n, uint8_t *reg_x, bool res_s
 
 
 void instr_bit_RLC(struct cpuz80 *cpu, uint8_t *reg_x){
-    uint8_t bit7 = *reg_x & 0x80;
-    *reg_x <<= 1;
-    if(bit7){
-        cpu->flags.cy = 1;
-        *reg_x |= 0x01;
-    }else{
-        cpu->flags.cy = 0;
-        *reg_x &= ~0x01;
-    }
-    cpu->flags.n = 0;
-    cpu->flags.h = 0;
+    instruction_rlc(cpu, reg_x);
+    flags_test_ZS(&cpu->flags, *reg_x);
+    flags_test_P(&cpu->flags, *reg_x);
 }
 
 void instr_bit_RRC(struct cpuz80 *cpu, uint8_t *reg_x){
-    uint8_t bit0 = *reg_x & 0x01;
-    *reg_x >>= 1;
-    if(bit0){
-        cpu->flags.cy = 1;
-        *reg_x |= 0x80;
-    }else{
-        cpu->flags.cy = 0;
-        *reg_x &= ~0x80;
-    }
-    cpu->flags.n = 0;
-    cpu->flags.h = 0;
+    instruction_rrc(cpu, reg_x);
+    flags_test_ZS(&cpu->flags, *reg_x);
+    flags_test_P(&cpu->flags, *reg_x);
 }
 
 void instr_bit_RL(struct cpuz80 *cpu, uint8_t *reg_x){
-    uint8_t bit7 = *reg_x & 0x80;
-    *reg_x <<= 1;
-    if(cpu->flags.cy){
-        *reg_x |= 0x01;
-    }else{
-        *reg_x &= ~0x01;
-    }
-
-    if(bit7){
-        cpu->flags.cy = 1;
-    }else{
-        cpu->flags.cy = 0;
-    }
-    cpu->flags.n = 0;
-    cpu->flags.h = 0;
+    instruction_rl(cpu, reg_x);
+    flags_test_ZS(&cpu->flags, *reg_x);
+    flags_test_P(&cpu->flags, *reg_x);
 }
 
 void instr_bit_RR(struct cpuz80 *cpu, uint8_t *reg_x){
-    uint8_t bit0 = *reg_x & 0x01;
-    *reg_x >>= 1;
-    if(cpu->flags.cy){
-        *reg_x |= 0x80;
-    }else{
-        *reg_x &= ~0x80;
-    }
-
-    if(bit0){
-        cpu->flags.cy = 1;
-    }else{
-        cpu->flags.cy = 0;
-    }
-    cpu->flags.n = 0;
-    cpu->flags.h = 0;
+    instruction_rr(cpu, reg_x);
+    flags_test_ZS(&cpu->flags, *reg_x);
+    flags_test_P(&cpu->flags, *reg_x);
 }
 
 void instr_bit_SLA(struct cpuz80 *cpu, uint8_t *reg_x){
-    uint8_t bit7 = *reg_x & 0x80;
-    *reg_x <<= 1;
-
-    if(bit7){
-        cpu->flags.cy = 1;
-    }else{
-        cpu->flags.cy = 0;
-    }
-    cpu->flags.n = 0;
-    cpu->flags.h = 0;
-    flags_test_ZS(&cpu->flags, *reg_x);
-    flags_test_P(&cpu->flags, *reg_x);
+    instruction_sla(cpu, reg_x);
 }
 
 void instr_bit_SRA(struct cpuz80 *cpu, uint8_t *reg_x){
-    //convert to signed to shift right arithmetically
-    uint8_t bit7 = *reg_x & 0x80;
-    uint8_t bit0 = *reg_x & 0x01;
-    *reg_x >>= 1;
-    if(bit7) *reg_x |= 0x80;
-    else {*reg_x &= ~0x80;}
-
-    if(bit0){
-        cpu->flags.cy = 1;
-    }else{
-        cpu->flags.cy = 0;
-    }
-    cpu->flags.n = 0;
-    cpu->flags.h = 0;
-    flags_test_ZS(&cpu->flags, *reg_x);
-    flags_test_P(&cpu->flags, *reg_x);
+    instruction_sra(cpu, reg_x);
 }
 
 void instr_bit_SLL(struct cpuz80 *cpu, uint8_t *reg_x){
-    uint8_t bit7 = *reg_x & 0x80;
-    *reg_x <<= 1;
-
-    if(bit7){
-        cpu->flags.cy = 1;
-    }else{
-        cpu->flags.cy = 0;
-    }
-    *reg_x |= 0x01;
-    cpu->flags.n = 0;
-    cpu->flags.h = 0;
-    flags_test_ZS(&cpu->flags, *reg_x);
-    flags_test_P(&cpu->flags, *reg_x);
+    instruction_sll(cpu, reg_x);
 }
 
 
 void instr_bit_SRL(struct cpuz80 *cpu, uint8_t *reg_x){
-    uint8_t bit0 = *reg_x & 0x01;
-    *reg_x >>= 1;
-
-    if(bit0){
-        cpu->flags.cy = 1;
-    }else{
-        cpu->flags.cy = 0;
-    }
-    cpu->flags.n = 0;
-    cpu->flags.h = 0;
-    flags_test_ZS(&cpu->flags, *reg_x);
-    flags_test_P(&cpu->flags, *reg_x);
+    instruction_srl(cpu, reg_x);
 }
 
