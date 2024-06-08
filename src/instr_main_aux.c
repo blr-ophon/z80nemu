@@ -152,6 +152,50 @@ void instr_main_A_SPECIAL(struct cpuz80 *cpu, uint8_t idx){
     }
 }
 
+void instr_main_D_SPECIAL(struct cpuz80 *cpu, uint8_t idx){
+    //DAA, CPL, SCF, CCF
+    switch(idx){
+        case 0: //JP nn
+            {
+            uint16_t adr = cpu_GetLIWord(cpu);
+            cpu->PC = adr -1;
+            break;
+            }
+        case 1: //Bit Instructions
+            {
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            cpu_bit_instructions(cpu, &prf_opcode);
+            break;
+            }
+        case 2: //OUT (n),A
+            io_routines_OUT(cpu, &cpu->reg_A);
+            break;
+        case 3: //IN A,(n)
+            io_routines_IN(cpu, &cpu->reg_A);
+            break;
+        case 4: //EX (SP),HL
+            {
+            uint16_t word = stack_pop16(cpu);
+            stack_push16(cpu, read_reg_HL(cpu));
+            write_reg_HL(cpu, word);
+            break;
+            }
+        case 5: //EX DE,HL
+            {
+            uint16_t temp = read_reg_HL(cpu);
+            write_reg_HL(cpu, read_reg_DE(cpu));
+            write_reg_DE(cpu, temp);
+            break;
+            }
+        case 6: //DI
+            cpu->interrupt_enable = 0;
+            break;
+        case 7: //EI
+            cpu->interrupt_enable = 1;
+            break;
+    }
+}
+
 
 
 

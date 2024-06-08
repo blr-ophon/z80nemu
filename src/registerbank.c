@@ -42,3 +42,15 @@ void write_reg_SP(Cpuz80 *cpu, uint16_t value){
 uint16_t read_reg_SP(Cpuz80 *cpu){
     return cpu->SP;
 }
+
+void write_reg_AF(Cpuz80 *cpu, uint16_t value){
+    cpu->reg_A = value >> 8;
+    flags_sta_byte(&cpu->flags, (uint8_t)value);
+}
+
+uint16_t read_reg_AF(Cpuz80 *cpu){
+    uint16_t word = 0;
+    word |= (uint16_t) (cpu->reg_A)  << 8;
+    word |= flags_load_byte(&cpu->flags);
+    return word;
+}

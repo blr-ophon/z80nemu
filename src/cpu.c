@@ -407,11 +407,6 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
             cpu->flags.n = 0;
             cpu->flags.cy = !cpu->flags.cy;
             break;
-        */
-        case 0x00 ... 0x3f:
-            instr_main(cpu, *opcode);
-            break;
-        /*
         case 0x40: //LD B,B 
             //TODO: use instruction_ld from here onwards
             cpu->reg_B = cpu->reg_B;
@@ -575,20 +570,6 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
         case 0x75: //LD (HL),L 
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_L;
             break;
-        */
-        case 0x40 ... 0x75:
-            instr_main(cpu, *opcode);
-            break;
-        case 0x76: //HALT
-            //TODO
-            break;
-        case 0x77 ... 0x7f:
-            instr_main(cpu, *opcode);
-            break;
-        case 0x80 ... 0xbf:
-            instr_main(cpu, *opcode);
-            break;
-        /*
         case 0x77: //LD (HL),A 
             cpu->memory->memory[read_reg_HL(cpu)] = cpu->reg_A;
             break;
@@ -616,9 +597,6 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
         case 0x7f: //LD A,A
             cpu->reg_A = cpu->reg_A;
             break;
-        */
-
-        /*
         case 0x80: //ADD A,B
             instruction_add(cpu, cpu->reg_B);
             break;
@@ -813,7 +791,6 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
         case 0xbf: //CMP A
             instruction_cmp(cpu, cpu->reg_A);
             break;
-        */
         case 0xc0: //RET NZ
             if(!cpu->flags.z){
                 cpu->PC = stack_pop16(cpu) -1;
@@ -1197,8 +1174,55 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
             stack_push16(cpu, cpu->PC + 1);
             cpu->PC = (INTERRUPT_VECTOR_SIZE * 7) - 1;
             break;
+        */
+
+        case 0xc9: //RET
+            cpu->PC = stack_pop16(cpu) -1;
+            break;
+        case 0xcd: //CALL nn
+            {
+            uint16_t adr = cpu_GetLIWord(cpu);
+            stack_push16(cpu, cpu->PC+1);
+            cpu->PC = adr -1;
+            break;
+            }
+        case 0xd9: //EXX
+            write_reg_BC(cpu, ~(read_reg_BC(cpu)));
+            write_reg_DE(cpu, ~(read_reg_DE(cpu)));
+            write_reg_HL(cpu, ~(read_reg_HL(cpu)));
+            break;
+        case 0xdd: //PREFIX: IX INSTRUCTIONS
+            {
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            cpu_IXIY_instructions(cpu, &prf_opcode, 0);
+            break;
+            }
+        case 0xe9: //JP (HL)
+            {
+            uint16_t word = read_reg_HL(cpu);
+            cpu->PC = word -1;
+            break;
+            }
+        case 0xed: //PREFIX: MISC INTRUCTIONS
+            {
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            cpu_misc_instructions(cpu, prf_opcode);
+            break;
+            }
+        case 0xf9: //LD SP,HL
+            {
+            uint16_t word = read_reg_HL(cpu);
+            cpu->SP = word;
+            break;
+            }
+        case 0xfd: //PREFIX: IY INSTRUCTIONS
+            {
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            cpu_IXIY_instructions(cpu, &prf_opcode, 1);
+            break;
+            }
         default:
-            unimplemented_opcode(cpu,opcode);
+            instr_main(cpu, *opcode);
             break;
     }
 }

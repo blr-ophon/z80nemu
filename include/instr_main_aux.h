@@ -13,4 +13,7 @@ void instr_main_A_INCDECRP(struct cpuz80 *cpu, uint8_t pair_idx, bool inc_dec);
 void instr_main_A_ROT(struct cpuz80 *cpu, uint8_t rot_idx);
 void instr_main_A_SPECIAL(struct cpuz80 *cpu, uint8_t idx);
 
+//Group D
+void instr_main_D_SPECIAL(struct cpuz80 *cpu, uint8_t idx);
+
 #endif

@@ -2,6 +2,9 @@
 #include "registerbank.h"
 
 //TODO: document functions
+//TODO: Move 
+//TODO: Use standard notation on code text, n/Imm nn/XImm
+//TODO: switch bool conditions to functions for efficiency
 
 void instr_main(struct cpuz80 *cpu, uint8_t opcode){
     uint8_t opcode_xx = (opcode & 0xc0) >> 6;       //1100 0000    
@@ -19,6 +22,7 @@ void instr_main(struct cpuz80 *cpu, uint8_t opcode){
             instr_main_C(cpu, opcode_yyy, opcode_zzz);
             break;
         case 3:
+            instr_main_D(cpu, opcode_yyy, opcode_zzz);
             break;
     }
 }
@@ -72,7 +76,7 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
         case 1: //LD regPair, XImm      
                 //ADD regPair, regPair
             /*
-             * yyy = first bit defines if LD or ADD
+             * yyy = first bit (lsb) defines if LD or ADD
              * last 2 bits specify one from four pairs
              */
             {
@@ -90,7 +94,7 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
         case 2: //LD (dst), A               
                 //LD A, (src)
             /*
-             * yyy = first bit defines LD (dst),A or LD A,(src)
+             * yyy = first bit (lsd) defines LD (dst),A or LD A,(src)
              * last 2 bits specify if dst/adr is BC(0), DE(1) or XImm(2,3)
              */
             {
@@ -108,7 +112,7 @@ void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
         case 3: //INC (regPair)             
                 //DEC (regPair)
             /*
-             * yyy = first bit defines INC(0) or DEC(1)
+             * yyy = first bit (lsd) defines INC(0) or DEC(1)
              * last 2 bits specify register pair
              */
             {
@@ -232,4 +236,120 @@ void instr_main_C(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
     };
 
     operations[opcode_yyy](cpu, *regsPtrs[opcode_zzz]);
+}
+
+void instr_main_D(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
+    bool(*condition_X[])(struct cpuz80 *cpu) = {
+        condition_NZ,
+        condition_Z,
+        condition_NC,
+        condition_C,
+        condition_PO,
+        condition_PE,
+        condition_P,
+        condition_M
+    };
+    void(*write_regPair[])(struct cpuz80 *cpu, uint16_t XImm) = {
+        write_reg_BC,
+        write_reg_DE,
+        write_reg_HL,
+        write_reg_AF,
+    };
+    uint16_t(*read_regPair[])(struct cpuz80 *cpu) = {
+        read_reg_BC,
+        read_reg_DE,
+        read_reg_HL,
+        read_reg_AF
+    };
+    void(*operations[])(struct cpuz80 *cpu, uint8_t reg_x) = {
+        instruction_add,
+        instruction_adc,
+        instruction_sub,
+        instruction_sbc,
+        instruction_ana,
+        instruction_xra,
+        instruction_ora,
+        instruction_cmp
+    };
+
+    switch(opcode_zzz){
+        case 0: //RET (cond)
+            /*
+             * yyy = specify one from 8 conditions
+             */
+            {
+            if(condition_X[opcode_yyy](cpu)){
+                cpu->PC = stack_pop16(cpu) -1;
+            }
+            break;
+            }
+        case 1: //POP regPair
+                //Exceptional: EXX / JP (HL) / LD SP,HL
+            /*
+             * yyy 
+             * first bit (lsb) = 0 for POP. Exceptional treated outside
+             * last 2 bits specify one from four pairs
+             */
+            {  
+            uint16_t word = stack_pop16(cpu);
+            write_regPair[opcode_yyy >> 1](cpu, word);
+            break;
+            }
+        case 2: //JP (cond)
+            /*
+             * yyy = specify one from 8 conditions
+             */
+            {
+            uint16_t adr = cpu_GetLIWord(cpu);
+            if(condition_X[opcode_yyy](cpu)){
+                cpu->PC = adr -1;
+            }
+            break;
+            }
+        case 3: //JP nn         /   Bit
+                //Out (n),a     /   in a,(in)
+                //EX (SP),HL    /   EX DE,HL
+                //DI            /   EI
+            instr_main_D_SPECIAL(cpu, opcode_yyy);
+            break;
+        case 4: //CALL (cond)
+            /*
+             * yyy = specify one from 8 conditions
+             */
+            {
+            uint16_t adr = cpu_GetLIWord(cpu);
+            if(condition_X[opcode_yyy](cpu)){
+                stack_push16(cpu, cpu->PC+1);
+                cpu->PC = adr -1;
+            }
+            break;
+            }
+        case 5: //PUSH regPair
+                //CALL nn
+            /*
+             * yyy 
+             * first bit (lsb) = 0 for PUSH. Exceptional treated outside
+             * last 2 bits specify one from four pairs
+             */
+            {
+            stack_push16(cpu, read_regPair[opcode_yyy >> 1](cpu));
+            break;
+            }
+        case 6: //ALUOP A,Imm
+            /*
+             * yyy = one of 8 ALU operations
+             */
+            {
+            uint8_t Imm = memory_read8(cpu->memory, ++cpu->PC);
+            operations[opcode_yyy](cpu, Imm);
+            break;
+            }
+        case 7: //RST x
+            /*
+             * yyy: Vectors Addresses are multiples of 8 
+             */
+            stack_push16(cpu, cpu->PC+1);
+            cpu->PC = (INTERRUPT_VECTOR_SIZE * opcode_yyy) - 1;
+            break;
+    }
 }

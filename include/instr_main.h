@@ -13,6 +13,7 @@ void instr_main(struct cpuz80 *cpu, uint8_t opcode);
 void instr_main_A(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz);
 void instr_main_B(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz);
 void instr_main_C(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz);
+void instr_main_D(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz);
 
 
 #endif
