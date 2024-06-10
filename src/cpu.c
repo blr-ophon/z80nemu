@@ -2,6 +2,7 @@
 #include "instr_main.h"
 #include "instr_ixy.h"
 #include "instr_bit.h"
+#include "instr_ixybit.h"
 //TODO: create a common header for cpu.h, flags.h, instructions.h and io_routines.h
 //to avoid redefinition of structs errors
 //TODO: CPU speed
@@ -141,7 +142,6 @@ void cpu_exec_instruction(Cpuz80 *cpu, uint8_t *opcode){
 }
 
 void cpu_bit_instructions(Cpuz80 *cpu, uint8_t *opcode){
-    //TODO: use pointer to functions to reduce lines of code here
     instr_bit(cpu, *opcode);
 }
 
@@ -174,9 +174,9 @@ void cpu_IXIY_instructions(Cpuz80 *cpu, uint8_t *opcode, bool iy){
             break;
         case 0xcb: //PREFIX: IX/Y BIT INSTRUCTIONS
             {
-            uint8_t d_operand = memory_read8(cpu->memory, ++cpu->PC);
+            uint8_t Imm = memory_read8(cpu->memory, ++cpu->PC);
             uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
-            cpu_IXIY_bit_instructions(cpu, &prf_opcode, d_operand, iy);
+            instr_ixybit(cpu, prf_opcode, Imm, iy);
             break;
             }
         case 0xe1: //POP IX/Y
@@ -200,55 +200,6 @@ void cpu_IXIY_instructions(Cpuz80 *cpu, uint8_t *opcode, bool iy){
             break;
         default:
             instr_ixy(cpu, *opcode, iy);
-            break;
-    }
-}
-
-void cpu_IXIY_bit_instructions(Cpuz80 *cpu, uint8_t *opcode, uint8_t d_operand, bool iy_mode){
-    uint16_t *pIXY = iy_mode? &cpu->reg_IY : &cpu->reg_IX;
-    uint16_t adr = (*pIXY) + (int16_t)d_operand;
-    uint8_t *ixy_operand = &cpu->memory->memory[adr];
-    switch(*opcode){
-        case 0x06: //RLC (IX/Y+d)
-            instruction_rlc(cpu, ixy_operand);
-            flags_test_ZS(&cpu->flags, *ixy_operand);
-            flags_test_P(&cpu->flags, *ixy_operand);
-            break;
-        case 0x0e: //RRC (IX/Y+d)
-            instruction_rrc(cpu, ixy_operand);
-            flags_test_ZS(&cpu->flags, *ixy_operand);
-            flags_test_P(&cpu->flags, *ixy_operand);
-            break;
-        case 0x16: //RL (IX/Y+d)
-            instruction_rl(cpu, ixy_operand);
-            flags_test_ZS(&cpu->flags, *ixy_operand);
-            flags_test_P(&cpu->flags, *ixy_operand);
-            break;
-        case 0x1e: //RR (IX/Y+d)
-            instruction_rr(cpu, ixy_operand);
-            flags_test_ZS(&cpu->flags, *ixy_operand);
-            flags_test_P(&cpu->flags, *ixy_operand);
-            break;
-        case 0x26: //SLA (IX/Y+d)
-            instruction_sla(cpu, ixy_operand);
-            break;
-        case 0x2e: //SRA (IX/Y+d)
-            instruction_sra(cpu, ixy_operand);
-            break;
-        case 0x36: //SLL (IX/Y+d)
-            instruction_sll(cpu, ixy_operand);
-            break;
-        case 0x3e: //SRL (IX/Y+d)
-            instruction_srl(cpu, ixy_operand);
-            break;
-        case 0x40 ... 0x7f: //BIT x,(IX/Y + d)
-            instruction_bit_IXIY(cpu, *opcode, ixy_operand);
-            break;
-        case 0x80 ... 0xbf: //RES x,(IX/Y + d)
-            instruction_res_set_IXIY(cpu, *opcode, 0, ixy_operand);
-            break;
-        case 0xc0 ... 0xff: //SET x,(IX/Y + d)
-            instruction_res_set_IXIY(cpu, *opcode, 1, ixy_operand);
             break;
     }
 }
