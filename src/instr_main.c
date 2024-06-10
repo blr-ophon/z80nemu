@@ -1,5 +1,4 @@
 #include "instr_main.h"
-#include "registerbank.h"
 
 //TODO: document functions
 //TODO: Use standard notation on code text, n/Imm nn/XImm
@@ -8,7 +7,80 @@
 /*
  * Instructions marked as Exceptional are not handled here
  */
-void instr_main(struct cpuz80 *cpu, uint8_t opcode){
+void instr_main(Cpuz80 *cpu, uint8_t opcode){
+    switch(opcode){
+        case 0x00: //NOP
+            break;
+        case 0x08: //EX AF,AF'
+            {
+            uint16_t nreg_af = flags_load_byte(&cpu->flags);
+            nreg_af |= ((uint16_t)cpu->reg_A) << 8;
+            nreg_af = ~nreg_af;
+
+            uint8_t reg_F = nreg_af;
+            flags_sta_byte(&cpu->flags, reg_F);
+            cpu->reg_A = nreg_af >> 8;
+            break;
+            }
+        case 0xc9: //RET
+            cpu->PC = stack_pop16(cpu) -1;
+            break;
+        case 0xcb: //PREFIX: BIT INSTRUCTIONS
+            {
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            instr_bit(cpu, prf_opcode);
+            break;
+            }
+        case 0xcd: //CALL nn
+            {
+            uint16_t adr = z80_fetchLIWord(cpu);
+            stack_push16(cpu, cpu->PC+1);
+            cpu->PC = adr -1;
+            break;
+            }
+        case 0xd9: //EXX
+            write_reg_BC(cpu, ~(read_reg_BC(cpu)));
+            write_reg_DE(cpu, ~(read_reg_DE(cpu)));
+            write_reg_HL(cpu, ~(read_reg_HL(cpu)));
+            break;
+        case 0xdd: //PREFIX: IX INSTRUCTIONS
+            {
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            instr_ixy(cpu, prf_opcode, 0);
+            break;
+            }
+        case 0xe9: //JP (HL)
+            {
+            uint16_t word = read_reg_HL(cpu);
+            cpu->PC = word -1;
+            break;
+            }
+        case 0xed: //PREFIX: MISC INTRUCTIONS
+            {
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            instr_misc(cpu, prf_opcode);
+            break;
+            }
+        case 0xf9: //LD SP,HL
+            {
+            uint16_t word = read_reg_HL(cpu);
+            cpu->SP = word;
+            break;
+            }
+        case 0xfd: //PREFIX: IY INSTRUCTIONS
+            {
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            instr_ixy(cpu, prf_opcode, 1);
+            break;
+            }
+        default:
+            instr_main_decode(cpu, opcode);
+            break;
+    }
+}
+
+
+void instr_main_decode(struct cpuz80 *cpu, uint8_t opcode){
     uint8_t opcode_xx = (opcode & 0xc0) >> 6;       //1100 0000    
     uint8_t opcode_yyy = (opcode & 0x38) >> 3;      //0011 1000
     uint8_t opcode_zzz = opcode & 0x07;             //0000 0111
@@ -281,7 +353,7 @@ void instr_main_D(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
              * yyy = specify one from 8 conditions
              */
             {
-            uint16_t adr = cpu_GetLIWord(cpu);
+            uint16_t adr = z80_fetchLIWord(cpu);
             if(condition_X[opcode_yyy](cpu)){
                 cpu->PC = adr -1;
             }
@@ -298,7 +370,7 @@ void instr_main_D(struct cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
              * yyy = specify one from 8 conditions
              */
             {
-            uint16_t adr = cpu_GetLIWord(cpu);
+            uint16_t adr = z80_fetchLIWord(cpu);
             if(condition_X[opcode_yyy](cpu)){
                 stack_push16(cpu, cpu->PC+1);
                 cpu->PC = adr -1;

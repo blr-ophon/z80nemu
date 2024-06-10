@@ -1,5 +1,4 @@
 #include "instr_bit.h"
-#include "cpu.h"
 
 //TODO: Document functions
 
@@ -16,7 +15,7 @@
  * zzz:
  *   reg
  */
-void instr_bit(struct cpuz80 *cpu, uint8_t opcode){
+void instr_bit(Cpuz80 *cpu, uint8_t opcode){
     uint8_t opcode_xx = (opcode & 0xc0) >> 6;     //1100 0000    
     uint8_t opcode_yyy = (opcode & 0x38) >> 3;     //0011 1000
     uint8_t opcode_zzz = opcode & 0x07;                   //0000 0111
@@ -32,7 +31,7 @@ void instr_bit(struct cpuz80 *cpu, uint8_t opcode){
         &cpu->reg_A
     };
 
-    void(*operations_rs[])(struct cpuz80 *cpu, uint8_t *reg_x) = {
+    void(*operations_rs[])(Cpuz80 *cpu, uint8_t *reg_x) = {
         instr_bit_RLC,
         instr_bit_RRC,
         instr_bit_RL,
@@ -63,7 +62,7 @@ void instr_bit(struct cpuz80 *cpu, uint8_t opcode){
  * Bit n, reg_x
  * Test bit n of reg_x
  */
-void instr_bit_BIT(struct cpuz80 *cpu, uint8_t n, uint8_t *reg_x){
+void instr_bit_BIT(Cpuz80 *cpu, uint8_t n, uint8_t *reg_x){
     if((*reg_x >> n) & 0x01){
         cpu->flags.z = 0;
     } else cpu->flags.z = 1;
@@ -77,7 +76,7 @@ void instr_bit_BIT(struct cpuz80 *cpu, uint8_t n, uint8_t *reg_x){
  * Resets/Sets bit n of reg_x
  * res_set: 0 for res, 1 for set
  */
-void instr_bit_RES_SET(struct cpuz80 *cpu, uint8_t n, uint8_t *reg_x, bool res_set){
+void instr_bit_RES_SET(Cpuz80 *cpu, uint8_t n, uint8_t *reg_x, bool res_set){
     if(res_set){ //SET
         *reg_x |= (uint8_t) 0x01 << n;
 
@@ -89,44 +88,44 @@ void instr_bit_RES_SET(struct cpuz80 *cpu, uint8_t n, uint8_t *reg_x, bool res_s
 
 
 
-void instr_bit_RLC(struct cpuz80 *cpu, uint8_t *reg_x){
+void instr_bit_RLC(Cpuz80 *cpu, uint8_t *reg_x){
     instruction_rlc(cpu, reg_x);
     flags_test_ZS(&cpu->flags, *reg_x);
     flags_test_P(&cpu->flags, *reg_x);
 }
 
-void instr_bit_RRC(struct cpuz80 *cpu, uint8_t *reg_x){
+void instr_bit_RRC(Cpuz80 *cpu, uint8_t *reg_x){
     instruction_rrc(cpu, reg_x);
     flags_test_ZS(&cpu->flags, *reg_x);
     flags_test_P(&cpu->flags, *reg_x);
 }
 
-void instr_bit_RL(struct cpuz80 *cpu, uint8_t *reg_x){
+void instr_bit_RL(Cpuz80 *cpu, uint8_t *reg_x){
     instruction_rl(cpu, reg_x);
     flags_test_ZS(&cpu->flags, *reg_x);
     flags_test_P(&cpu->flags, *reg_x);
 }
 
-void instr_bit_RR(struct cpuz80 *cpu, uint8_t *reg_x){
+void instr_bit_RR(Cpuz80 *cpu, uint8_t *reg_x){
     instruction_rr(cpu, reg_x);
     flags_test_ZS(&cpu->flags, *reg_x);
     flags_test_P(&cpu->flags, *reg_x);
 }
 
-void instr_bit_SLA(struct cpuz80 *cpu, uint8_t *reg_x){
+void instr_bit_SLA(Cpuz80 *cpu, uint8_t *reg_x){
     instruction_sla(cpu, reg_x);
 }
 
-void instr_bit_SRA(struct cpuz80 *cpu, uint8_t *reg_x){
+void instr_bit_SRA(Cpuz80 *cpu, uint8_t *reg_x){
     instruction_sra(cpu, reg_x);
 }
 
-void instr_bit_SLL(struct cpuz80 *cpu, uint8_t *reg_x){
+void instr_bit_SLL(Cpuz80 *cpu, uint8_t *reg_x){
     instruction_sll(cpu, reg_x);
 }
 
 
-void instr_bit_SRL(struct cpuz80 *cpu, uint8_t *reg_x){
+void instr_bit_SRL(Cpuz80 *cpu, uint8_t *reg_x){
     instruction_srl(cpu, reg_x);
 }
 

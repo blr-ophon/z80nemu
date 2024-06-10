@@ -2,21 +2,21 @@
 
 
 //LD rp,nn
-void instr_main_A_LDRPnn(struct cpuz80 *cpu, uint8_t pair_idx){
-    void(*write_regPair[])(struct cpuz80 *cpu, uint16_t XImm) = {
+void instr_main_A_LDRPnn(Cpuz80 *cpu, uint8_t pair_idx){
+    void(*write_regPair[])(Cpuz80 *cpu, uint16_t XImm) = {
         write_reg_BC,
         write_reg_DE,
         write_reg_HL,
         write_reg_SP,
     };
-    uint16_t XImm = cpu_GetLIWord(cpu);
+    uint16_t XImm = z80_fetchLIWord(cpu);
 
     write_regPair[pair_idx](cpu, XImm);
 }
 
 //ADD HL,rp
-void instr_main_A_addHLRP(struct cpuz80 *cpu, uint8_t pair_idx){
-    uint16_t(*read_regPair[])(struct cpuz80 *cpu) = {
+void instr_main_A_addHLRP(Cpuz80 *cpu, uint8_t pair_idx){
+    uint16_t(*read_regPair[])(Cpuz80 *cpu) = {
         read_reg_BC,
         read_reg_DE,
         read_reg_HL,
@@ -34,12 +34,12 @@ void instr_main_A_addHLRP(struct cpuz80 *cpu, uint8_t pair_idx){
 
 //LD (dst), A. Where dst is BC,DE or XImm
 //if dst is HL index, load from HL instead of A
-void instr_main_A_LDDST(struct cpuz80 *cpu, uint8_t dst_idx){
-    uint16_t(*get_addr[])(struct cpuz80 *cpu) = {
+void instr_main_A_LDDST(Cpuz80 *cpu, uint8_t dst_idx){
+    uint16_t(*get_addr[])(Cpuz80 *cpu) = {
         read_reg_BC,
         read_reg_DE,
-        cpu_GetLIWord,
-        cpu_GetLIWord
+        z80_fetchLIWord,
+        z80_fetchLIWord
     };
     uint16_t addr = get_addr[dst_idx](cpu);
 
@@ -53,12 +53,12 @@ void instr_main_A_LDDST(struct cpuz80 *cpu, uint8_t dst_idx){
 
 //LD A,(src). Where src is BC,DE or XImm
 //if dst is HL index, load to HL instead of A
-void instr_main_A_LDSRC(struct cpuz80 *cpu, uint8_t src_idx){
-    uint16_t(*get_addr[])(struct cpuz80 *cpu) = {
+void instr_main_A_LDSRC(Cpuz80 *cpu, uint8_t src_idx){
+    uint16_t(*get_addr[])(Cpuz80 *cpu) = {
         read_reg_BC,
         read_reg_DE,
-        cpu_GetLIWord,
-        cpu_GetLIWord
+        z80_fetchLIWord,
+        z80_fetchLIWord
     };
     uint16_t addr = get_addr[src_idx](cpu);
     
@@ -74,14 +74,14 @@ void instr_main_A_LDSRC(struct cpuz80 *cpu, uint8_t src_idx){
  * INC/DEC regPair
  * inc_dec is 0 for inc and 1 for dec
  */
-void instr_main_A_INCDECRP(struct cpuz80 *cpu, uint8_t pair_idx, bool inc_dec){
-    uint16_t(*read_regPair[])(struct cpuz80 *cpu) = {
+void instr_main_A_INCDECRP(Cpuz80 *cpu, uint8_t pair_idx, bool inc_dec){
+    uint16_t(*read_regPair[])(Cpuz80 *cpu) = {
         read_reg_BC,
         read_reg_DE,
         read_reg_HL,
         read_reg_SP
     };
-    void(*write_regPair[])(struct cpuz80 *cpu, uint16_t XImm) = {
+    void(*write_regPair[])(Cpuz80 *cpu, uint16_t XImm) = {
         write_reg_BC,
         write_reg_DE,
         write_reg_HL,
@@ -94,8 +94,8 @@ void instr_main_A_INCDECRP(struct cpuz80 *cpu, uint8_t pair_idx, bool inc_dec){
 }
 
 //Rotate instructions
-void instr_main_A_ROT(struct cpuz80 *cpu, uint8_t rot_idx){
-    void(*ROT_A[])(struct cpuz80 *cpu, uint8_t *reg) = {
+void instr_main_A_ROT(Cpuz80 *cpu, uint8_t rot_idx){
+    void(*ROT_A[])(Cpuz80 *cpu, uint8_t *reg) = {
         instruction_rlc,
         instruction_rrc,
         instruction_rl,
@@ -103,7 +103,7 @@ void instr_main_A_ROT(struct cpuz80 *cpu, uint8_t rot_idx){
     };
     ROT_A[rot_idx](cpu, &cpu->reg_A);
 }
-static inline void instr_main_A_DAA(struct cpuz80 *cpu){
+static inline void instr_main_A_DAA(Cpuz80 *cpu){
     uint8_t correction = 0;
 
     uint8_t ls_nibble = cpu->reg_A & 0x0f;
@@ -128,7 +128,7 @@ static inline void instr_main_A_DAA(struct cpuz80 *cpu){
     flags_test_P(&cpu->flags, cpu->reg_A);
 }
 
-void instr_main_A_SPECIAL(struct cpuz80 *cpu, uint8_t idx){
+void instr_main_A_SPECIAL(Cpuz80 *cpu, uint8_t idx){
     //DAA, CPL, SCF, CCF
     switch(idx){
         case 0: //DAA
@@ -152,21 +152,17 @@ void instr_main_A_SPECIAL(struct cpuz80 *cpu, uint8_t idx){
     }
 }
 
-void instr_main_D_SPECIAL(struct cpuz80 *cpu, uint8_t idx){
+void instr_main_D_SPECIAL(Cpuz80 *cpu, uint8_t idx){
     //DAA, CPL, SCF, CCF
     switch(idx){
         case 0: //JP nn
             {
-            uint16_t adr = cpu_GetLIWord(cpu);
+            uint16_t adr = z80_fetchLIWord(cpu);
             cpu->PC = adr -1;
             break;
             }
-        case 1: //Bit Instructions
-            {
-            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
-            cpu_bit_instructions(cpu, &prf_opcode);
+        case 1: //Exceptional: Bit Instructions
             break;
-            }
         case 2: //OUT (n),A
             io_routines_OUT(cpu, &cpu->reg_A);
             break;
@@ -195,8 +191,4 @@ void instr_main_D_SPECIAL(struct cpuz80 *cpu, uint8_t idx){
             break;
     }
 }
-
-
-
-
 

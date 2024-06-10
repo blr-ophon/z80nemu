@@ -1,6 +1,4 @@
 #include "io_routines.h"
-#include "cpu.h"
-#include "memory.h"
 
 //TODO: document the process of programmed IO, Interrupt and DMA here
 //
@@ -8,7 +6,7 @@
 //byte (c) as address, giving it 256 possibilities. In hardware, this means the 
 //upper 8 address pins are not connected at all to IO chips.
 
-void io_routines_IN_C(struct cpuz80 *cpu, uint8_t *reg_x){
+void io_routines_IN_C(Cpuz80 *cpu, uint8_t *reg_x){
     //Instruction is executed in two parts. 
     //
     //In the first one it sends the address to address bus and sets proper 
@@ -51,7 +49,7 @@ void io_routines_IN_C(struct cpuz80 *cpu, uint8_t *reg_x){
     flags_test_ZS(&cpu->flags, *reg_x);
 }
 
-void io_routines_OUT_C(struct cpuz80 *cpu, uint8_t *reg_x){
+void io_routines_OUT_C(Cpuz80 *cpu, uint8_t *reg_x){
     //Instruction is executed in two parts. 
     //
     //In the first one, it sets the proper flags and latches the byte in
@@ -92,7 +90,7 @@ void io_routines_OUT_C(struct cpuz80 *cpu, uint8_t *reg_x){
     flags_test_ZS(&cpu->flags, *reg_x);
 }
 
-void io_routines_IN(struct cpuz80 *cpu, uint8_t *reg_x){
+void io_routines_IN(Cpuz80 *cpu, uint8_t *reg_x){
     //FIRST PART OF INSTRUCTION
     if(cpu->IORQ_pin){ //active low
         cpu->IORQ_pin = 0;
@@ -118,7 +116,7 @@ void io_routines_IN(struct cpuz80 *cpu, uint8_t *reg_x){
     flags_test_ZS(&cpu->flags, *reg_x);
 }
 
-void io_routines_OUT(struct cpuz80 *cpu, uint8_t *reg_x){
+void io_routines_OUT(Cpuz80 *cpu, uint8_t *reg_x){
     //FIRST PART OF INSTRUCTION
     if(cpu->IORQ_pin){ //active low
         cpu->IORQ_pin = 0;

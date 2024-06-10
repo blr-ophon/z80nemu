@@ -1,6 +1,65 @@
 #include "instr_ixy.h"
 
-void instr_ixy(struct cpuz80 *cpu, uint8_t opcode, bool iy){
+void instr_ixy(Cpuz80 *cpu, uint8_t opcode, bool iy){
+    uint16_t *pIXY = iy? &cpu->reg_IY : &cpu->reg_IX;
+    switch(opcode){
+        case 0x21: //LD IX/Y,nn
+            *pIXY = z80_fetchLIWord(cpu);
+            break;
+        case 0x22: //LD (nn),IX/Y
+            {
+            uint16_t adr = z80_fetchLIWord(cpu);
+            cpu->memory->memory[adr] = *pIXY; 
+            cpu->memory->memory[adr+1] = (*pIXY & 0xff00) >> 8;
+            break;
+            }
+        case 0x23: //INC IX/Y
+            (*pIXY) ++;
+            break;
+        case 0x2a: //LD IX/Y,(nn)
+            {
+            uint16_t adr = z80_fetchLIWord(cpu);
+            *pIXY = 0;
+            *pIXY |= cpu->memory->memory[adr];
+            *pIXY |= (uint16_t)(cpu->memory->memory[adr+1]) << 8;
+            break;
+            }
+        case 0x2b: //DEC IX/Y
+            (*pIXY) --;
+            break;
+        case 0xcb: //PREFIX: IX/Y BIT INSTRUCTIONS
+            {
+            uint8_t Imm = memory_read8(cpu->memory, ++cpu->PC);
+            uint8_t prf_opcode = memory_read8(cpu->memory, ++cpu->PC);
+            instr_ixybit(cpu, prf_opcode, Imm, iy);
+            break;
+            }
+        case 0xe1: //POP IX/Y
+            (*pIXY) = stack_pop16(cpu);
+            break;
+        case 0xe3: //EX (SP),IX/Y
+            {
+            uint16_t temp = cpu->SP;
+            cpu->SP = (*pIXY);
+            (*pIXY) = temp;
+            break;
+            }
+        case 0xe5: //PUSH IX/Y
+            stack_push16(cpu, (*pIXY));
+            break;
+        case 0xe9: //JP (IX/Y)
+            cpu->PC = (*pIXY) - 1;
+            break;
+        case 0xf9: //LD SP,IX/Y
+            cpu->SP = (*pIXY);
+            break;
+        default:
+            instr_ixy_decode(cpu, opcode, iy);
+            break;
+    }
+}
+
+void instr_ixy_decode(struct cpuz80 *cpu, uint8_t opcode, bool iy){
     uint8_t opcode_xx = (opcode & 0xc0) >> 6;       //1100 0000    
     uint8_t opcode_yyy = (opcode & 0x38) >> 3;      //0011 1000
     uint8_t opcode_zzz = opcode & 0x07;             //0000 0111

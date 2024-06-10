@@ -1,6 +1,6 @@
 #include "instr_ixybit.h"
 
-void instr_ixybit(struct cpuz80 *cpu, uint8_t opcode, uint8_t Imm, bool iy){
+void instr_ixybit(Cpuz80 *cpu, uint8_t opcode, uint8_t Imm, bool iy){
     uint16_t *pIXY = iy? &cpu->reg_IY : &cpu->reg_IX;
 
     uint8_t opcode_xx = (opcode & 0xc0) >> 6;     //1100 0000    
@@ -20,7 +20,7 @@ void instr_ixybit(struct cpuz80 *cpu, uint8_t opcode, uint8_t Imm, bool iy){
         &cpu->memory->memory[adr],      //(ix + d)
         &cpu->reg_A
     };
-    void(*operations_rs[])(struct cpuz80 *cpu, uint8_t *reg_x) = {
+    void(*operations_rs[])(Cpuz80 *cpu, uint8_t *reg_x) = {
         instr_bit_RLC,
         instr_bit_RRC,
         instr_bit_RL,

@@ -1,11 +1,14 @@
 #ifndef REGISTERBANK_H
 #define REGISTERBANK_H
+
 #include <stdint.h>
+#include "z80.h"
+
+
+#define PTR_DE  cpu->memory->memory[read_reg_DE(cpu)]
+#define PTR_HL  cpu->memory->memory[read_reg_HL(cpu)]
 
 //TODO: switch to get/set
-
-typedef struct cpuz80 Cpuz80;
-
 
 void write_reg_BC(Cpuz80 *cpu, uint16_t value);
 void write_reg_DE(Cpuz80 *cpu, uint16_t value);

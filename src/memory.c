@@ -1,9 +1,15 @@
 #include "memory.h" 
-#include <assert.h>
 
+#ifdef MEMORY_CHECK
 static void check_boundaries(Memory *memory, uint16_t address){
     assert(address <= memory->size);
 }
+#else
+static void check_boundaries(Memory *memory, uint16_t address) {
+    (void)memory;
+    (void)address;
+}
+#endif
 
 Memory *memory_init(size_t size){
     Memory *memory = malloc(sizeof(Memory));
