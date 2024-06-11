@@ -259,8 +259,8 @@ void instr_misc_B(Cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
             uint8_t op_idx = (opcode_yyy & 0x01);             //001
                                                               
             void(*SBC_ADC[])(struct cpuz80 *cpu, uint16_t regPair) = {
-                instruction_misc_sbc,
-                instruction_misc_adc
+                instr_misc_SBC,
+                instr_misc_ADC
             };
             SBC_ADC[op_idx](cpu, read_regPair[pair_idx](cpu));
 

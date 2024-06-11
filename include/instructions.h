@@ -7,10 +7,6 @@
 #include "registerbank.h"
 
 
-void instruction_misc_adc(Cpuz80 *cpu, uint16_t reg_x);
-
-void instruction_misc_sbc(Cpuz80 *cpu, uint16_t reg_x);
-
 void instruction_ld(Cpuz80 *cpu, uint8_t opcode);
 
 void instruction_res_set(Cpuz80 *cpu, uint8_t opcode, bool bit_state);
