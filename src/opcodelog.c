@@ -5,7 +5,6 @@ uint8_t used_opcodes[0xff] = {0xff};
 //this won't work if RST 7 (0xff) is executed
 
 void bubble_sort(uint8_t array[]){
-    //TODO: implement qsort please...
     for(int i = 0; i < 0xff; i++){
         for(int j = 0; j < 0xff - 1; j++){
             if(array[j+1] < array[j]){

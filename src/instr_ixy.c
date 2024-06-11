@@ -63,19 +63,14 @@ void instr_ixy_decode(struct cpuz80 *cpu, uint8_t opcode, bool iy){
     uint8_t opcode_xx = (opcode & 0xc0) >> 6;       //1100 0000    
     uint8_t opcode_yyy = (opcode & 0x38) >> 3;      //0011 1000
     uint8_t opcode_zzz = opcode & 0x07;             //0000 0111
-    switch(opcode_xx){
-        case 0: //Group A
-            instr_ixy_A(cpu, opcode_yyy, opcode_zzz, iy);
-            break;
-        case 1: //Group B
-            instr_ixy_B(cpu, opcode_yyy, opcode_zzz, iy);
-            break;
-        case 2: //Group C
-            instr_ixy_C(cpu, opcode_yyy, opcode_zzz, iy);
-            break;
-        case 3: //Group D. Fully Exceptional.
-            break;
-    }
+                                                    //
+    void(*instr_ixy_groups[])(Cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz, bool iy) = {
+        instr_ixy_A,   //Group A: 0x00 to 0x3f
+        instr_ixy_B,   //Group B: 0x40 to 0x7f
+        instr_ixy_C,   //Group C: 0x80 to 0xbf
+        NULL           //Group D: 0xc0 to 0xff
+    };
+    instr_ixy_groups[opcode_xx](cpu, opcode_yyy, opcode_zzz, iy);
 }
 
 static inline void instr_ixy_add(struct cpuz80 *cpu, uint16_t *pIXY, uint16_t reg_pair){

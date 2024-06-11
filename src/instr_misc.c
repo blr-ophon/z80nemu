@@ -2,22 +2,6 @@
 
 void instr_misc(Cpuz80 *cpu, uint8_t opcode){
     switch(opcode){
-        case 0x40: //IN B,(c)
-            io_routines_IN_C(cpu, &cpu->reg_B);
-            break;
-        case 0x41: //OUT (c),B
-            io_routines_OUT_C(cpu, &cpu->reg_B);
-            break;
-        case 0x42: //SBC HL,BC
-            instruction_misc_sbc(cpu, read_reg_BC(cpu));
-            break;
-        case 0x43: //LD (nn),BC
-            {
-            uint16_t adr = z80_fetchLIWord(cpu);
-            cpu->memory->memory[adr] = cpu->reg_C;
-            cpu->memory->memory[adr+1] = cpu->reg_B;
-            break;
-            }
         case 0x44: //NEG
             {
             uint16_t result = 0 + (uint16_t)~(cpu->reg_A) + 1;
@@ -42,81 +26,23 @@ void instr_misc(Cpuz80 *cpu, uint8_t opcode){
         case 0x47: //LD I,A
             cpu->reg_I = cpu->reg_A;
             break;
-        case 0x48: //IN C,(C)
-            io_routines_IN(cpu, &cpu->reg_C);
-            break;
-        case 0x49: //OUT (C),C
-            io_routines_OUT(cpu, &cpu->reg_C);
-            break;
-        case 0x4a: //ADC HL,BC
-            instruction_misc_adc(cpu, read_reg_BC(cpu));
-            break;
-        case 0x4b: //LD BC,(nn)
-            {
-            uint16_t adr = z80_fetchLIWord(cpu);
-            cpu->reg_C = cpu->memory->memory[adr];
-            cpu->reg_B = cpu->memory->memory[adr+1];
-            break;
-            }
         case 0x4d: //RETI
                    //TODO
             break;
         case 0x4f: //LD R,A
             cpu->reg_R = cpu->reg_A;
             break;
-        case 0x50: //IN D,(c)
-            io_routines_IN(cpu, &cpu->reg_D);
-            break;
-        case 0x51: //OUT (c),D
-            io_routines_OUT(cpu, &cpu->reg_D);
-            break;
-        case 0x52: //SBC HL,DE
-            instruction_misc_sbc(cpu, read_reg_DE(cpu));
-            break;
-        case 0x53: //LD (nn),DE
-            {
-            uint16_t adr = z80_fetchLIWord(cpu);
-            cpu->memory->memory[adr] = cpu->reg_E;
-            cpu->memory->memory[adr+1] = cpu->reg_D;
-            break;
-            }
         case 0x56: //IM 1
             cpu->interrupt_mode = 1;
             break;
         case 0x57: //LD A,I
             cpu->reg_A = cpu->reg_I;
             break;
-        case 0x58: //IN E,(C)
-            io_routines_IN(cpu, &cpu->reg_E);
-            break;
-        case 0x59: //OUT (C),E
-            io_routines_OUT(cpu, &cpu->reg_E);
-            break;
-        case 0x5a: //ADC HL,DE
-            instruction_misc_adc(cpu, read_reg_DE(cpu));
-            break;
-        case 0x5b: //LD DE,(nn)
-            {
-            uint16_t adr = z80_fetchLIWord(cpu);
-            cpu->reg_E = cpu->memory->memory[adr];
-            cpu->reg_D = cpu->memory->memory[adr+1];
-            break;
-            }
-            break;
         case 0x5e: //IM 2
             cpu->interrupt_mode = 2;
             break;
         case 0x5f: //LD A,R
             cpu->reg_A = cpu->reg_R;
-            break;
-        case 0x60: //IN H,(c)
-            io_routines_IN(cpu, &cpu->reg_H);
-            break;
-        case 0x61: //OUT (c),H
-            io_routines_OUT(cpu, &cpu->reg_H);
-            break;
-        case 0x62: //SBC HL,HL
-            instruction_misc_sbc(cpu, read_reg_HL(cpu));
             break;
         case 0x67: //RRD
             {
@@ -132,15 +58,6 @@ void instr_misc(Cpuz80 *cpu, uint8_t opcode){
             cpu->flags.s = cpu->reg_A & 0x80? 1 : 0;
             break;
             }
-        case 0x68: //IN L,(c)
-            io_routines_IN(cpu, &cpu->reg_L);
-            break;
-        case 0x69: //OUT (c),L
-            io_routines_OUT(cpu, &cpu->reg_L);
-            break;
-        case 0x6a: //ADC HL,HL
-            instruction_misc_adc(cpu, read_reg_HL(cpu));
-            break;
         case 0x6f: //RLD
             {
             uint8_t temp_reg_A = cpu->reg_A;
@@ -153,34 +70,6 @@ void instr_misc(Cpuz80 *cpu, uint8_t opcode){
             cpu->flags.h = 0;
             cpu->flags.z = cpu->reg_A == 0? 1 : 0;
             cpu->flags.s = cpu->reg_A & 0x80? 1 : 0;
-            break;
-            }
-        case 0x72: //SBC HL,SP
-            instruction_misc_sbc(cpu, cpu->SP);
-            break;
-        case 0x73: //LD (nn),SP
-            {
-            uint16_t adr = z80_fetchLIWord(cpu);
-            cpu->memory->memory[adr] = cpu->SP & 0x00ff;
-            cpu->memory->memory[adr+1] = (cpu->SP & 0xff00) >> 8;
-            break;
-            }
-        case 0x78: //IN A,(c)
-            io_routines_IN(cpu, &cpu->reg_A);
-            break;
-        case 0x79: //OUT (c),A
-            io_routines_OUT(cpu, &cpu->reg_A);
-            break;
-        case 0x7a: //ADC HL,SP
-            instruction_misc_adc(cpu, cpu->SP);
-            break;
-        case 0x7b: //LD SP,(nn)
-            {
-            uint16_t new_SP = 0;
-            uint16_t adr = z80_fetchLIWord(cpu);
-            new_SP |= cpu->memory->memory[adr];
-            new_SP |= (cpu->memory->memory[adr+1]) << 8;
-            cpu->SP = new_SP;
             break;
             }
         case 0xa0: //LDI
@@ -308,6 +197,100 @@ void instr_misc(Cpuz80 *cpu, uint8_t opcode){
             break;
         case 0xbb: //OTDR
                    //TODO
+            break;
+        default:
+            instr_misc_decode(cpu, opcode);
+    }
+}
+
+
+void instr_misc_decode(Cpuz80 *cpu, uint8_t opcode){
+    uint8_t opcode_xx = (opcode & 0xc0) >> 6;       //1100 0000    
+    uint8_t opcode_yyy = (opcode & 0x38) >> 3;      //0011 1000
+    uint8_t opcode_zzz = opcode & 0x07;             //0000 0111
+    switch(opcode_xx){
+        case 0: //Group A
+            break;
+        case 1: //Group B
+            instr_misc_B(cpu, opcode_yyy, opcode_zzz);
+            break;
+        case 2: //Group C
+            //instr_ixy_C(cpu, opcode_yyy, opcode_zzz, iy);
+            break;
+        case 3: //Group D. Fully Exceptional.
+            break;
+    }
+}
+
+void instr_misc_B(Cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz){
+    uint8_t dummyReg = 0;
+    uint8_t *regsPtrs[] = {
+        &cpu->reg_B,
+        &cpu->reg_C,
+        &cpu->reg_D,
+        &cpu->reg_E,
+        &cpu->reg_H,
+        &cpu->reg_L,
+        &dummyReg,      //Receives value on IN. Sends 0 on OUT
+        &cpu->reg_A
+    };
+    uint16_t(*read_regPair[])(struct cpuz80 *cpu) = {
+        read_reg_BC,
+        read_reg_DE,
+        read_reg_HL,
+        read_reg_SP
+    };
+
+    switch(opcode_zzz){
+        case 0: //IN
+            io_routines_IN_C(cpu, regsPtrs[opcode_yyy]);
+            break;
+        case 1: //OUT
+            io_routines_OUT_C(cpu, regsPtrs[opcode_yyy]);
+            break;
+        case 2: //SBC regPair,regPair
+                //ADC regPair,regPair
+            /*
+             * yyy = first bit (lsb) defines SBC(0) or ADC(1)
+             * last 2 bits specify regPair used
+             */
+            {
+            uint8_t pair_idx = (opcode_yyy & 0x06) >> 1;      //110
+            uint8_t op_idx = (opcode_yyy & 0x01);             //001
+                                                              
+            void(*SBC_ADC[])(struct cpuz80 *cpu, uint16_t regPair) = {
+                instruction_misc_sbc,
+                instruction_misc_adc
+            };
+            SBC_ADC[op_idx](cpu, read_regPair[pair_idx](cpu));
+
+            break;
+            }
+        case 3: //LD (dst), RP
+                //LD RP, (src)
+            /*
+             * yyy = first bit (lsd) defines LD (dst),regPair or LD regPair,(src)
+             * last 2 bits specify regPair used
+             */
+            {
+            uint8_t srcdst_idx = (opcode_yyy & 0x06) >> 1;    //110
+            uint8_t op_idx = (opcode_yyy & 0x01);             //001
+                                                              
+            void(*LD_SRC_DST[])(struct cpuz80 *cpu, uint8_t srcdst_idx) = {
+                instr_misc_LDDST,
+                instr_misc_LDSRC
+            };
+
+            LD_SRC_DST[op_idx](cpu, srcdst_idx);
+            break;
+            }
+        case 4: //Exceptional
+            break;
+        case 5: //Exceptional
+            break;
+        case 6: //Exceptional
+            break;
+        case 7: //Exceptional
             break;
     }
 }

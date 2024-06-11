@@ -85,20 +85,13 @@ void instr_main_decode(struct cpuz80 *cpu, uint8_t opcode){
     uint8_t opcode_yyy = (opcode & 0x38) >> 3;      //0011 1000
     uint8_t opcode_zzz = opcode & 0x07;             //0000 0111
 
-    switch(opcode_xx){
-        case 0: //Group A
-            instr_main_A(cpu, opcode_yyy, opcode_zzz);
-            break;
-        case 1:
-            instr_main_B(cpu, opcode_yyy, opcode_zzz);
-            break;
-        case 2:
-            instr_main_C(cpu, opcode_yyy, opcode_zzz);
-            break;
-        case 3:
-            instr_main_D(cpu, opcode_yyy, opcode_zzz);
-            break;
-    }
+    void(*instr_main_groups[])(Cpuz80 *cpu, uint8_t opcode_yyy, uint8_t opcode_zzz) = {
+        instr_main_A,   //Group A: 0x00 to 0x3f
+        instr_main_B,   //Group B: 0x40 to 0x7f
+        instr_main_C,   //Group C: 0x80 to 0xbf
+        instr_main_D,   //Group D: 0xc0 to 0xff
+    };
+    instr_main_groups[opcode_xx](cpu, opcode_yyy, opcode_zzz);
 }
 
 
